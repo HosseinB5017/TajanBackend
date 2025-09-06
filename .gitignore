@@ -1,0 +1,23 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/download
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+/.idea
+
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/server/Utils/MainPageApp.json
+/server/Utils/NewMainPageSite.json
+/server/Utils/MainPageSite.json
+
