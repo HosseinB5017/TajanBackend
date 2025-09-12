@@ -28,9 +28,7 @@ app.use(cors({
 
 
 app.use(express.json());
-app.get("/", (req, res) => {
-    res.send("Application running")
-})
+
 
 app.use('/api' , baseMiddleWare);
 app.use('/api/FileManager' ,fileDownloader );
