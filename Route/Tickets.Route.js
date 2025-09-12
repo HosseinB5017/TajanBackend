@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, verifyTokenAndAdmin } = require('../Controllers/verifyToken.js');
+const { verifyToken, verifyTokenAndAdmin } = require('../Controllers/VerifyToken.js');
 const TicketController = require('../Controllers/Tickets.Controllers.js');
 
 
