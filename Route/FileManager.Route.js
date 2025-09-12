@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 
+
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const rootDirectory = path.join(__dirname, '../' );
