@@ -44,5 +44,5 @@ app.listen(PORT, () => {
 });
 
 app.get("/", (req, res) => {
-    res.send("Application running -- Pasmand api ")
+    res.send("Application running -- Pasmand api ");
 })
