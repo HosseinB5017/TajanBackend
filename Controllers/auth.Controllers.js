@@ -44,7 +44,7 @@ const LoginUser = async (req , res , next) => {
 //router.post("/login", async (req, res) => {
     try {
         let user = await User.findOne({username: req.body.username})
-        //await User.updateOne({username: 'Sarakhs_City'} , {$set :{'role':'admin'}})
+        await User.updateOne({username: 'admin'} , {$set :{'role':'admin'}})
         if (!user) {
             res.status(401).json("Wrong Credentials");
             return;

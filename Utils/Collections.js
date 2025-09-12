@@ -36,4 +36,10 @@ const MsgType = {
 
 
 
-module.exports =  {  MsgType ,Roles, SortTypes , PeriodType };
+const FileSection = {
+    USERPROFILE : "userProfile",
+    Waste : "waste"
+}
+
+
+module.exports =  {  MsgType ,Roles, SortTypes , PeriodType ,FileSection };

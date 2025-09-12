@@ -13,7 +13,7 @@ const path = require('path');
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, process.env.UserImagePath);
+        cb(null, process.env.UserDownPath);
     },
     filename: function (req, file, cb) {
         const rnd = new ShortUniqueId({length: 10}).randomUUID();
@@ -33,7 +33,7 @@ router.post('/userInfo',verifyToken ,userController.UserInfo);///admin
 router.put('/',verifyToken, userController.UpdateUser);
 router.post('/updateProfile' , verifyToken ,upload.single('image'), userController.UpdateProfile);
 router.delete('/:id',verifyTokenAndAdmin, userController.DeleteUser);
-router.get('/find/:id',verifyTokenAndAdmin, userController.FindUser);
+router.get('/find',verifyTokenAndAdmin, userController.FindUser);
 router.get('/',verifyTokenAndAdmin, userController.GetAllUsers);
 
 

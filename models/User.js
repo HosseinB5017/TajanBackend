@@ -3,9 +3,9 @@ const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema(
     {
-        username: { type: String, required: true, unique: true},
+        username: { type: String, required: true, unique: true , trim: true},
         nationalId: { type: String, required: false, unique: true , sparse: true},
-        email: { type: String, required: false, unique: true , sparse: true},
+        email: { type: String, required: false, unique: true , sparse: true , trim: true, lowercase: true},
         password: { type: String, required: false},
         name: { type: String, required: false},
         lastName: { type: String, required: false},
@@ -14,6 +14,11 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: "user",
         },
+        finance : {type : Number , default : 0 },
+        score : {type : Number , default : 0 },
+        active : {type : Boolean , default : true },
+
+        userAddress : [{type : Schema.Types.ObjectId , ref:  "Address"}]
     }, 
     { timestamps: true},
 );
