@@ -13,6 +13,17 @@ const SortTypes = {
 }
 
 
+// utils/dayMap.js
+const dayMap = {
+    0: "یکشنبه",
+    1: "دوشنبه",
+    2: "سه‌شنبه",
+    3: "چهارشنبه",
+    4: "پنج‌شنبه",
+    5: "جمعه",
+    6: "شنبه",
+};
+
 
 
 const PeriodType = {
@@ -42,4 +53,4 @@ const FileSection = {
 }
 
 
-module.exports =  {  MsgType ,Roles, SortTypes , PeriodType ,FileSection };
+module.exports =  {dayMap ,  MsgType ,Roles, SortTypes , PeriodType ,FileSection };

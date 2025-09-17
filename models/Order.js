@@ -1,21 +1,29 @@
 const mongoose = require("mongoose");
 const schema = mongoose.Schema;
+const autoIncrement = require('mongoose-sequence')(mongoose); // Add this line to import the plugin
 
 const OrderSchema = new mongoose.Schema(
     {
-        title: {type: String, required: false ,default : 0 },
-        index : {type : Number , required : false , default : 0},
+        orderId : {type : Number , required : false , default : 0},
         wastes : [{
                 item: {type: schema.Types.ObjectId, ref: 'Waste'},
                 count: {type:  Number, default: 0}
         }],
         address : {type : schema.Types.ObjectId , ref : "Address"},
-        user : {type : schema.Types.ObjectId , ref : "user"},
+        user : {type : schema.Types.ObjectId , ref : "User"},
         totalPrice : {type : Number , default :0},
-
+        timeSlot: { type: schema.Types.ObjectId, ref: "TimeSlot", required: true },
+        active: { type: Boolean, default: true },    // فعال/غیرفعال
+        status: {
+                    type: String,
+                    enum: ["pending", "collected", "cancelled"],
+                    default: "pending",
+            },
+        recciveTime : {type : Date , required : false},
+        desc : {type : String , default:''}
     },
     {timestamps: true},
 );
 
-
-module.exports = mongoose.model("OrderSchema", OrderSchema);
+OrderSchema.plugin(autoIncrement, { inc_field: 'orderId' });
+module.exports = mongoose.model("Order", OrderSchema);

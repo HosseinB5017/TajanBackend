@@ -62,6 +62,10 @@ var userFound_404 = {
     en : "user not found!"
 }
 
+var userNotActiveAddress = {
+    fa : "شماآدرس فعال ندارید",
+    en : "User does not have a Active Address"
+}
 var serviceFound_404 = {
     fa : "سرویس  مورد نظر پیدا نشد!",
     en : "service not found!"
@@ -169,8 +173,15 @@ var CodeSent  = {
     fa : "کد ورود به شماره مورد نظر ارسال شد",
     en: "code has sent"
 }
+
+var OrderNotExist  = {
+    fa : "سفارش یافت نشد!",
+    en: "Order not Found"
+}
+
 module.exports = {
     CodeSent,
+    OrderNotExist,
     SellerAStore,
     SellerNotHaveService,
     TokenNotAuthorized,
@@ -203,4 +214,5 @@ module.exports = {
     orderHasRejected,
     orderHasCancelled,
     orderHasDone,
+    userNotActiveAddress
 }

@@ -9,7 +9,11 @@ const wastesCategory = require("../Route/WastesCategory.Route");
 const Tickets = require("../Route/Tickets.Route.js");
 const UserAddress = require("../Route/UserAddress.Route.js");
 const city = require("../Route/City");
+const TimeSlots = require("../Route/TimeSlots.Route");
 const state = require("../Route/State");
+const Order = require("../Route/Order.Route.js");
+
+
 
 
 app.use("/users", userRoutes);
@@ -21,7 +25,8 @@ app.use("/Tickets" , Tickets);
 app.use("/city" , city);
 app.use("/state" , state);
 app.use("/UserAddress" , UserAddress);
-
+app.use("/TimeSlots" , TimeSlots);
+app.use("/Order" , Order);
 
 
 module.exports = app;
