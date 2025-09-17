@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema(
         finance : {type : Number , default : 0 },
         score : {type : Number , default : 0 },
         active : {type : Boolean , default : true },
-
+        activeAddress : {type : Schema.Types.ObjectId , ref:  "Address"},
         userAddress : [{type : Schema.Types.ObjectId , ref:  "Address"}]
     }, 
     { timestamps: true},

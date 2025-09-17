@@ -9,8 +9,10 @@ router.post('/', verifyToken , UserAddressRoute.CreateUserAddress);
 router.post('/update', verifyToken , UserAddressRoute.UpdateUserAddress);
 router.delete('/:id',verifyTokenAndAdmin, UserAddressRoute.DeleteUserAddress);
 router.delete('/db/:id',verifyTokenAndAdmin, UserAddressRoute.DeleteUserAddressFromDB);
-router.get('/', UserAddressRoute.GetUserAddress);
-router.get('/find', UserAddressRoute.FindAUserAddress);
+router.get('/',verifyTokenAndAdmin ,  UserAddressRoute.GetUserAddress);
+router.get('/find', verifyToken , UserAddressRoute.FindAUserAddress);
+router.get('/me', verifyToken , UserAddressRoute.GetAddressesOfUser);
+router.post('/SetUserAddress', verifyToken,  UserAddressRoute.SetActiveUserAddress);
 
 
 module.exports = router;

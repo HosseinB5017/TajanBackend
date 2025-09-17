@@ -3,7 +3,7 @@ const UserModel = require("../models/User");
 const erorrs = require("../Erorrs.js");
 
 const TelegramBot = require('node-telegram-bot-api');
-const TOKEN = '7717420480:AAEFb2Ruhj9xdaYOqWG_bAj5OMOqvIBMErg';
+const TOKEN = '';
 const CHANNEL_ID = '@نام_کاربری_کانال_شما'; // مثلا: '@mychannel'
 const rp = require('request-promise');
 
@@ -38,7 +38,7 @@ const CreateTicketsModel = async (req, res, next) => {
             hasAttachment = true;
         }
 
-        const attachmentUrl = "https://sarakhs.ir/panel/system137/details/"+savedTicket._id;  // لینک پیوست
+        const attachmentUrl = "";  // لینک پیوست
         const attachmentText = hasAttachment
             ? `\n\n[پیوست دارد](${attachmentUrl})`
             : "";
@@ -46,7 +46,7 @@ const CreateTicketsModel = async (req, res, next) => {
 
 
 
-
+/*
         const options = {
             uri: 'https://api.telegram.org/bot'+TOKEN+'/sendMessage',
             method: 'POST',
@@ -64,7 +64,7 @@ const CreateTicketsModel = async (req, res, next) => {
             })
             .catch(err => {
                 console.error('خطا:', err.message);
-            });
+            });*/
         res.status(200).json(savedTicket); // Use 201 for successful creation
 
     } catch (err) {

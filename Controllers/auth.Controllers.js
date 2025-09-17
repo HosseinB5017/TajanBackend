@@ -11,7 +11,6 @@ const OtpCode = require("../models/OtpCodes.js");
 //Register
 
 const RegisterUser = async (req , res , next)=> {
-//router.post("/register", async (req, res) => {
     const { username, password } = req.body;
 
     if(!username || !password ) {
@@ -41,9 +40,8 @@ const RegisterUser = async (req , res , next)=> {
 
 //LOGIN
 const LoginUser = async (req , res , next) => {
-//router.post("/login", async (req, res) => {
     try {
-        let user = await User.findOne({username: req.body.username})
+        let user = await User.findOne({username: req.body.username}).populate('activeAddress')
         await User.updateOne({username: 'admin'} , {$set :{'role':'admin'}})
         if (!user) {
             res.status(401).json("Wrong Credentials");
@@ -70,7 +68,6 @@ const LoginUser = async (req , res , next) => {
         res.status(501).json(err)
     }
 }
-//});.
 
 const LoginAndRegisterUser = async (req, res, next) => {
     try {
@@ -129,7 +126,7 @@ const VerifyOtpUser = async (req, res, next) => {
         if (!isValid)
             return  res.status(404).json({error :erorrs.otpCode_Expired})
 
-        var user = await User.findOne({'username': req.body.phoneNumber , role: Roles.USER.toString()});
+        var user = await User.findOne({'username': req.body.phoneNumber , role: Roles.USER.toString()}).populate('activeAddress');
         if (!user) {
             const invitedCodeGenerate = generator.generateNumericCode(7);
             const newUser = new User({

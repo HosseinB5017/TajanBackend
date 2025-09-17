@@ -5,8 +5,7 @@ const UserAddressSchema = new mongoose.Schema(
     {
         Address : {
         title : { type: String, required: true},
-        state: { type: String, required: true},
-        city : { type : String , required : true},
+        city : { type : Schema.Types.ObjectId , ref : "City"},
         boulevard : {type: String, required : false},
         alley : {type: String, required : false},
         plaque : {type: String, required : false},
@@ -15,7 +14,7 @@ const UserAddressSchema = new mongoose.Schema(
         info : {type : String , default : ''}
     },
        user : {type : Schema.Types.ObjectId  , ref : 'User'},
-        active : {type : Boolean , default : true }
+       active : {type : Boolean , default : true }
 
     }
 );

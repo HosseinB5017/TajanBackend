@@ -5,14 +5,22 @@ const userRoutes = require("../Route/Users.Route");
 const News = require("../Route/News.Route");
 const Banners = require("../Route/Banners.Route");
 const wastes = require("../Route/Wastes.Route");
+const wastesCategory = require("../Route/WastesCategory.Route");
 const Tickets = require("../Route/Tickets.Route.js");
+const UserAddress = require("../Route/UserAddress.Route.js");
+const city = require("../Route/City");
+const state = require("../Route/State");
 
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
 app.use("/News" , News);
 app.use("/Waste" , wastes);
+app.use("/WasteCategory" , wastesCategory);
 app.use("/Tickets" , Tickets);
+app.use("/city" , city);
+app.use("/state" , state);
+app.use("/UserAddress" , UserAddress);
 
 
 

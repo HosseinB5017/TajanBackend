@@ -7,6 +7,7 @@ const WasteSchema = new mongoose.Schema(
         price: {type: Number , default : 0 },
         img: {type: schema.Types.ObjectId , ref : "DownloadFile" },
         info: {type: String, required: false ,default : ''},
+        category : {type : schema.Types.ObjectId , ref : 'WasteCategory'},
         active : {type : Boolean , default : true }
     },
     {timestamps: true},

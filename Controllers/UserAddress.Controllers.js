@@ -4,12 +4,16 @@ const userInfo = require("../models/User");
 const CreateUserAddress = async (req, res, next) => {
 
     try {
-        const result = new ObjectModel(req.body);
+        const result = new ObjectModel({
+            ...req.body,
+            user: req.user.id
+        });
         const newObject = await result.save();
         const thisUser =  await userInfo.findById(req.user.id);
         thisUser.userAddress.push(newObject._id);
-        await thisUser.save();
+        thisUser.activeAddress = newObject._id;
 
+        await thisUser.save();
         res.status(200).json(newObject);
 
     } catch (error) {
@@ -43,6 +47,32 @@ const UpdateUserAddress = async (req, res, next) => {
         }
     }
 
+};
+
+
+const GetAddressesOfUser = async (req, res, next) => {
+    try {
+
+        let page;
+        req.query.page ? page = req.query.page : page = 1;
+        let perpage;
+        req.query.perpage ? perpage = req.query.perpage : perpage = 10;
+
+        const options = {
+            skip: ((page - 1) * perpage),
+            limit: perpage
+        }
+
+        var result = [];
+        let count = 0;
+        console.log(req.user);
+        result = await ObjectModel.find({ user : req.user.id}, {}, options);
+        count = await ObjectModel.countDocuments({ user : req.user.id});
+        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
+
+    } catch (error) {
+        res.status(400).json({error: error.message});
+    }
 };
 
 const GetUserAddress = async (req, res, next) => {
@@ -80,6 +110,20 @@ const DeleteUserAddress = async (req, res, next) => {
     }
 };
 
+
+const SetActiveUserAddress = async (req, res, next) => {
+    try {
+        const result = await userInfo.findById(req.body.id);
+        result.activeAddress = req.body.id;
+        const activeAdd =  await result.save();
+
+        res.status(200).json(activeAdd);
+    } catch (error) {
+        res.status(400).json({error: error.message});
+    }
+};
+
+
 const DeleteUserAddressFromDB = async (req, res, next) => {
     try {
         const result = await ObjectModel.findByIdAndRemove(req.params.id);
@@ -108,4 +152,4 @@ const FindAUserAddress = async (req, res, next) => {
 };
 
 
-module.exports = {CreateUserAddress, DeleteUserAddress  , UpdateUserAddress ,  DeleteUserAddressFromDB ,  FindAUserAddress, GetUserAddress}
+module.exports = {CreateUserAddress, SetActiveUserAddress , DeleteUserAddress  , UpdateUserAddress ,  DeleteUserAddressFromDB ,  FindAUserAddress ,GetAddressesOfUser, GetUserAddress}
