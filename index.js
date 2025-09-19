@@ -33,6 +33,11 @@ app.use(express.json());
 app.use('/api' , baseMiddleWare);
 app.use('/api/FileManager' ,fileDownloader );
 
+app.get('/download/Files/:filename', function(req, res){
+    var file = __dirname+"/" +process.env.filePath + req.params.filename;
+    res.download(file);
+});
+
 
 
 var PORT = process.env.PORT || 7000;
