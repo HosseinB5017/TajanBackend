@@ -56,7 +56,7 @@ const FoundBanners = async (req, res, next) => {
 //Get ALL Users
 const GetAllBanners = async (req, res, next) => {
     try {
-        var  Banners = await BannersModel.find().sort({_id:-1}).populate("DownloadFile");
+        var  Banners = await BannersModel.find().populate("imgBanner").sort({_id:-1});
         res.status(200).json(Banners);
     } catch (err) {
         res.status(500).json(err);
