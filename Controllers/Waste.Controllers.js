@@ -56,7 +56,7 @@ const GetWastes = async (req, res, next) => {
         }
         var result = [];
         let count = 0;
-        result = await ObjectModel.find({active : true}, {}, options).populate("img").populate('category');
+        result = await ObjectModel.find({active : true}, {}, options).populate("img").populate('category').populate("otherImg");;
         count = await ObjectModel.countDocuments({active : true});
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
@@ -91,7 +91,7 @@ const DeleteWasteFromDB = async (req, res, next) => {
 const FindAWaste = async (req, res, next) => {
     try {
         var result = {};
-        result = await ObjectModel.findById(req.query.id).populate("img").populate('category');
+        result = await ObjectModel.findById(req.query.id).populate("img").populate('category').populate("otherImg");
 
         if (!result) {
             return res.status(404).json(erorrs.notFound_404);
