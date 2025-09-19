@@ -3,18 +3,7 @@ const BannersModel = require("../models/Banners.js");
 //UPDATE
 const CreateBanners = async (req, res, next) => {
     try {
-        var Banners;
-        console.log(req.files[0].filename)
-
-        const bannerImage = process.env.baseUrl +  process.env.BannersPath + req.files[0].filename ;
-
-        Banners  = {
-            title :JSON.parse(req.body.title),
-            desc : JSON.parse(req.body.desc),
-            imgBanner : bannerImage,
-            otherInfo: JSON.parse(req.body.otherInfo),
-        };
-        const newBanners = new BannersModel(Banners);
+        const newBanners = new BannersModel(req.body);
         const resBanner = await newBanners.save();
 
         res.status(200).json(resBanner);
