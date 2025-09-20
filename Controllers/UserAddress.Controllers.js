@@ -8,6 +8,7 @@ const CreateUserAddress = async (req, res, next) => {
             ...req.body,
             user: req.user.id
         });
+
         const newObject = await result.save();
         const thisUser =  await userInfo.findById(req.user.id);
         thisUser.userAddress.push(newObject._id);

@@ -11,7 +11,10 @@ const UserAddressSchema = new mongoose.Schema(
         plaque : {type: String, required : false},
         unit : {type: String, required : false},
         postalCode :{type: String, required : false},
-        info : {type : String , default : ''}
+        info : {type : String , default : ''},
+        lat : {type : Number , default : 0},
+        lng : {type : Number , default : 0},
+
     },
        user : {type : Schema.Types.ObjectId  , ref : 'User'},
        active : {type : Boolean , default : true }

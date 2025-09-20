@@ -8,11 +8,9 @@ const CreateOrder = async (req, res, next) => {
         var user =  await UserModel.findById(req.user.id);
         if (!user)
             return res.status(400).json({ error: erorrs.userFound_404 });
-        if (!user.activeAddress)
-            return res.status(404).json({ error: erorrs.userFound_404 });
 
         var requestObj = {
-            address : user.activeAddress,
+            address : req.body.address,
             timeSlot : req.body.timeSlot,
             user : req.user.id
         }
