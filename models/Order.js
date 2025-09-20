@@ -13,6 +13,7 @@ const OrderSchema = new mongoose.Schema(
         user : {type : schema.Types.ObjectId , ref : "User"},
         totalPrice : {type : Number , default :0},
         timeSlot: { type: schema.Types.ObjectId, ref: "TimeSlot", required: true },
+        slot: { type: schema.Types.ObjectId, ref: "SlotSchema", required: true },
         active: { type: Boolean, default: true },    // فعال/غیرفعال
         status: {
                     type: String,

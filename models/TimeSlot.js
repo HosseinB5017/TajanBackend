@@ -1,20 +1,33 @@
+// models/TimeSlot.js
 const mongoose = require("mongoose");
-const schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-const TimeSlotSchema = new mongoose.Schema(
-    {
-            dayOfWeek: {
-                    type: String,
-                    enum: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
-                    required: true,
-            },
-            startTime: { type: String, required: true }, // "09:00"
-            endTime: { type: String, required: true },   // "11:00"
-            capacity: { type: Number, required: true },  // ظرفیت کل
-            remaining: { type: Number, required: false , default: 10 }, // ظرفیت باقی‌مانده
-            active: { type: Boolean, default: true },    // فعال/غیرفعال
-    },
-    { timestamps: true }
-);
+const SlotSchema = new Schema({
+    startTime: { type: String, required: true }, // فرمت '08:00'
+    endTime: { type: String, required: true },   // فرمت '09:00'
+    capacity: { type: Number, required: true },
+    remaining: { type: Number }
+ }); // بدون _id جدا برای هر تایم
+
+
+const TimeSlotSchema = new Schema({
+    day: { type: Date, required: true },        // روز تایم اسلات‌ها
+    slots: { type: [SlotSchema], default: [] }, // آرایه تایم اسلات‌های روز
+    active: { type: Boolean, default: true },
+    sourceTemplateId: { type: Schema.Types.ObjectId, default: null },
+}, { timestamps: true });
+
+// مقداردهی remaining برابر capacity هنگام save
+TimeSlotSchema.pre("save", function (next) {
+    this.slots.forEach(slot => {
+        if (slot.remaining === undefined || slot.remaining === null) {
+            slot.remaining = slot.capacity;
+        }
+    });
+    next();
+});
+
+// ایندکس روی روز و فعال بودن
+TimeSlotSchema.index({ day: 1, active: 1 });
 
 module.exports = mongoose.model("TimeSlot", TimeSlotSchema);
