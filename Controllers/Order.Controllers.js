@@ -3,11 +3,18 @@ const ObjectModel = require("../models/Order"); // مدل TimeSlot
 const collection = require("../Utils/Collections");
 const UserModel = require("../models/User");
 const WasteModel = require("../models/Waste")
+const Address = require("../models/UserAdress");
 const CreateOrder = async (req, res, next) => {
     try {
         var user =  await UserModel.findById(req.user.id);
         if (!user)
             return res.status(400).json({ error: erorrs.userFound_404 });
+
+        var addrs;
+            addrs = await Address.findById(req.body.address);
+
+        if (!addrs)
+            return res.status(400).json({ error: erorrs.AddressIsWrong});
 
         var requestObj = {
             address : req.body.address,

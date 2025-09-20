@@ -66,6 +66,12 @@ var userNotActiveAddress = {
     fa : "شماآدرس فعال ندارید",
     en : "User does not have a Active Address"
 }
+
+var AddressIsWrong = {
+    fa : "آدرس مورد نظر اشتباه است!",
+    en : "user Address is wrong"
+}
+
 var serviceFound_404 = {
     fa : "سرویس  مورد نظر پیدا نشد!",
     en : "service not found!"
@@ -181,6 +187,7 @@ var OrderNotExist  = {
 
 module.exports = {
     CodeSent,
+    AddressIsWrong,
     OrderNotExist,
     SellerAStore,
     SellerNotHaveService,
