@@ -9,7 +9,7 @@ router.post('/', verifyToken , UserAddressRoute.CreateUserAddress);
 router.post('/update', verifyToken , UserAddressRoute.UpdateUserAddress);
 router.delete('/:id',verifyToken, UserAddressRoute.DeleteUserAddress);
 router.delete('/db/:id',verifyToken, UserAddressRoute.DeleteUserAddressFromDB);
-router.get('/',verifyToken ,  UserAddressRoute.GetUserAddress);
+router.get('/',verifyTokenAndAdmin ,  UserAddressRoute.GetUserAddress);
 router.get('/find', verifyToken , UserAddressRoute.FindAUserAddress);
 router.get('/me', verifyToken , UserAddressRoute.GetAddressesOfUser);
 router.post('/SetUserAddress', verifyToken,  UserAddressRoute.SetActiveUserAddress);

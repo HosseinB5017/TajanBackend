@@ -53,7 +53,7 @@ const UpdateUserAddress = async (req, res, next) => {
 
 const GetAddressesOfUser = async (req, res, next) => {
     try {
-
+        console.log("sss");
         let page;
         req.query.page ? page = req.query.page : page = 1;
         let perpage;
@@ -66,7 +66,9 @@ const GetAddressesOfUser = async (req, res, next) => {
 
         var result = [];
         let count = 0;
-        console.log(req.user);
+
+        console.log(req.user.id);
+
         result = await ObjectModel.find({ user : req.user.id}, {}, options);
         count = await ObjectModel.countDocuments({ user : req.user.id});
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});

@@ -187,8 +187,10 @@ const GetOrdersMe = async (req, res, next) => {
         let page = parseInt(req.query.page) || 1;
         let perpage = parseInt(req.query.perpage) || 10;
 
+        console.log(req.user.id);
+
         // 1️⃣ گرفتن سفارش‌ها
-        const result = await ObjectModel.find(req.query.user)
+        const result = await ObjectModel.find({user : req.user.id})
             .populate("user")
             .populate("address")
             .populate("timeSlot")
@@ -207,7 +209,7 @@ const GetOrdersMe = async (req, res, next) => {
         });
 
         // 3️⃣ شمارش کل داده‌ها برای صفحه‌بندی
-        const count = await ObjectModel.countDocuments({user :req.query.user });
+        const count = await ObjectModel.countDocuments({user : req.user.id });
 
         // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
         const filtered = enriched.filter(order => order.user && order.user.activeAddress);
