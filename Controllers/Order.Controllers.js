@@ -191,7 +191,6 @@ const GetOrdersMe = async (req, res, next) => {
 
         // 1️⃣ گرفتن سفارش‌ها
         const result = await ObjectModel.find({user : req.user.id})
-            .populate("user")
             .populate("address")
             .populate("timeSlot")
             .populate("wastes.item")
@@ -202,6 +201,7 @@ const GetOrdersMe = async (req, res, next) => {
         // 2️⃣ اضافه کردن selectedSlot به هر سفارش
         const enriched = result.map(order => {
             const selectedSlot = order.timeSlot?.slots.id(order.slot) || null;
+
             return {
                 ...order.toObject(),
                 selectedSlot
@@ -212,12 +212,19 @@ const GetOrdersMe = async (req, res, next) => {
         const count = await ObjectModel.countDocuments({user : req.user.id });
 
         // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
-        const filtered = enriched.filter(order => order.user && order.user.activeAddress);
+
+        const cleaned = enriched.map(order => {
+            const obj = order.toObject ? order.toObject() : { ...order }; // اگه mongoose doc بود
+            if (obj.timeSlot) {
+                delete obj.timeSlot.slots;
+            }
+            return obj;
+        });
 
         res.status(200).json({
             CountOfPage: Math.ceil(count / perpage),
-            CountOfData: filtered.length,
-            data: filtered
+            CountOfData: cleaned.length,
+            data: cleaned
         });
     } catch (error) {
         res.status(400).json({ error: error.message });
