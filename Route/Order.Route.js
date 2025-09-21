@@ -5,7 +5,7 @@ const controller = require('../Controllers/Order.Controllers');
 
 
 router.post('/', verifyToken , controller.CreateOrder);
-router.post('/update', verifyToken , controller.UpdateOrder);
+router.post('/update/:id', verifyToken , controller.UpdateOrder);
 router.delete('/:id',verifyTokenAndAdmin, controller.DeleteOrder);
 router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteOrderFromDb);
 router.get('/', verifyToken,  controller.GetOrders);
