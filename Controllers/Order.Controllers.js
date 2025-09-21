@@ -183,14 +183,15 @@ const GetOrders = async (req, res, next) => {
 
 const GetOrdersMe = async (req, res, next) => {
     try {
-
+        let filter = {user : req.user.id};
+        if (req.query.status) filter.status = req.query.status;
         let page = parseInt(req.query.page) || 1;
         let perpage = parseInt(req.query.perpage) || 10;
 
         console.log(req.user.id);
 
         // 1️⃣ گرفتن سفارش‌ها
-        const result = await ObjectModel.find({user : req.user.id})
+        const result = await ObjectModel.find(filter)
             .populate("address")
             .populate("timeSlot")
             .populate("wastes.item")
@@ -209,7 +210,7 @@ const GetOrdersMe = async (req, res, next) => {
         });
 
         // 3️⃣ شمارش کل داده‌ها برای صفحه‌بندی
-        const count = await ObjectModel.countDocuments({user : req.user.id });
+        const count = await ObjectModel.countDocuments(filter);
 
         // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
 
