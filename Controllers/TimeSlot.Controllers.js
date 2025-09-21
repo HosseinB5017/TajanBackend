@@ -43,58 +43,63 @@ const GetTimeSlots = async (req, res) => {
     try {
         const now = new Date();
 
-        // 1) normalize from => start of day (00:00:00)
+        // normalize from/to (مثل کد خودت)
         const fromQ = req.query.from ? new Date(req.query.from) : new Date();
         const from = new Date(fromQ.getFullYear(), fromQ.getMonth(), fromQ.getDate(), 0, 0, 0, 0);
 
-        // 2) normalize to => end of day (23:59:59.999)
         let to;
         if (req.query.to) {
             const toQ = new Date(req.query.to);
             to = new Date(toQ.getFullYear(), toQ.getMonth(), toQ.getDate(), 23, 59, 59, 999);
         } else {
             const tmp = new Date(from);
-            tmp.setDate(tmp.getDate() + 7); // 7 روز بعد
+            tmp.setDate(tmp.getDate() + 7);
             to = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate(), 23, 59, 59, 999);
         }
 
-        // 3) پیدا کردن اسناد روزها بر اساس day (که معمولاً نیمه‌شب ذخیره شده)
-        const days = await ObjectModel.find({
-            active: true,
-            day: { $gte: from, $lte: to }
-        }).sort({ day: 1 });
+        const days = await ObjectModel.find(
+            { active: true, day: { $gte: from, $lte: to } },
+            { day: 1, meta: 1, slots: 1 }
+        ).sort({ day: 1 });
 
-        // 4) فیلتر اسلات‌ها: اگر همون روزه، فقط اسلات‌هایی که endTime > now را نگه دار
-        const result = days.map(d => {
-            // تضمین اینکه day به صورت Date است
-            const dayDate = new Date(d.day);
-            const isSameDay = dayDate.getFullYear() === now.getFullYear()
-                && dayDate.getMonth() === now.getMonth()
-                && dayDate.getDate() === now.getDate();
+        const result = days.reduce((acc, d) => {
+            // d.day ممکنه به صورت UTC midnight ذخیره شده باشه -> از getterهای UTC استفاده می‌کنیم
+            const dbDay = new Date(d.day); // ممکنه بخشی از timezone باشه
+            const dayLocal = new Date(dbDay.getUTCFullYear(), dbDay.getUTCMonth(), dbDay.getUTCDate(), 0, 0, 0, 0);
 
-            const validSlots = d.slots.filter(s => {
+            const isSameDay = dayLocal.getFullYear() === now.getFullYear()
+                && dayLocal.getMonth() === now.getMonth()
+                && dayLocal.getDate() === now.getDate();
+
+            const validSlots = (d.slots || []).filter(s => {
                 if (!s || s.remaining <= 0) return false;
 
-                // ساخت زمان پایان اسلات بر پایه تاریخِ آن روز (استفاده از local time constructor)
-                const [endHour, endMin] = (s.endTime || "00:00").split(':').map(Number);
-                const slotEnd = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), endHour, endMin, 0, 0);
+                const [hStr = "00", mStr = "00"] = (s.endTime || "00:00").split(':');
+                const endHour = parseInt(hStr, 10);
+                const endMin = parseInt(mStr, 10);
+                if (Number.isNaN(endHour) || Number.isNaN(endMin)) return false;
 
-                return isSameDay ? (slotEnd > now) : true;
+                // slotEnd را نسبت به dayLocal (که شروع آن روز در زمان محلی است) می‌سازیم
+                const slotEnd = new Date(dayLocal.getFullYear(), dayLocal.getMonth(), dayLocal.getDate(), endHour, endMin, 0, 0);
+
+                return isSameDay ? (slotEnd.getTime() > now.getTime()) : true;
             });
 
-            return {
-                _id: d._id,
-                day: d.day,
-                meta: d.meta,
-                slots: validSlots
-            };
-        }).filter(d => d.slots.length > 0); // حذف روزهایی بدون اسلات معتبر
+            if (validSlots.length > 0) {
+                acc.push({
+                    _id: d._id,
+                    day: d.day,
+                    meta: d.meta,
+                    slots: validSlots
+                });
+            }
+            return acc;
+        }, []);
 
         res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
-
 };
 
 // همه اسلات‌ها با صفحه‌بندی
@@ -124,7 +129,7 @@ const GetAllTimeSlots = async (req, res) => {
 // گرفتن اسلات با id
 const GetTimeSlotById = async (req, res) => {
     try {
-        const slot = await ObjectModel.findById(req.params.id);
+        const slot = await ObjectModel.findById(req.query.id);
         if (!slot) return res.status(404).json({ error: erorrs.notFound_404 });
 
         res.status(200).json(slot);
