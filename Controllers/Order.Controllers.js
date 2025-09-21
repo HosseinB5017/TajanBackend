@@ -181,6 +181,48 @@ const GetOrders = async (req, res, next) => {
 };
 
 
+const GetOrdersMe = async (req, res, next) => {
+    try {
+
+        let page = parseInt(req.query.page) || 1;
+        let perpage = parseInt(req.query.perpage) || 10;
+
+        // 1️⃣ گرفتن سفارش‌ها
+        const result = await ObjectModel.find(req.query.user)
+            .populate("user")
+            .populate("address")
+            .populate("timeSlot")
+            .populate("wastes.item")
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * perpage)
+            .limit(perpage);
+
+        // 2️⃣ اضافه کردن selectedSlot به هر سفارش
+        const enriched = result.map(order => {
+            const selectedSlot = order.timeSlot?.slots.id(order.slot) || null;
+            return {
+                ...order.toObject(),
+                selectedSlot
+            };
+        });
+
+        // 3️⃣ شمارش کل داده‌ها برای صفحه‌بندی
+        const count = await ObjectModel.countDocuments({user :req.query.user });
+
+        // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
+        const filtered = enriched.filter(order => order.user && order.user.activeAddress);
+
+        res.status(200).json({
+            CountOfPage: Math.ceil(count / perpage),
+            CountOfData: filtered.length,
+            data: filtered
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+
 const GetOrderById = async (req, res, next) => {
     try {
         const order = await ObjectModel.findById(req.query.id)
@@ -237,6 +279,7 @@ module.exports = {
     GetOrderById,
     DeleteOrder,
     DeleteOrderFromDb,
-    ReceiveOrder
+    ReceiveOrder,
+    GetOrdersMe
 };
 

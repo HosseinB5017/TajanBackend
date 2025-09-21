@@ -7,9 +7,9 @@ const UserAddressRoute = require('../Controllers/UserAddress.Controllers');
 
 router.post('/', verifyToken , UserAddressRoute.CreateUserAddress);
 router.post('/update', verifyToken , UserAddressRoute.UpdateUserAddress);
-router.delete('/:id',verifyTokenAndAdmin, UserAddressRoute.DeleteUserAddress);
-router.delete('/db/:id',verifyTokenAndAdmin, UserAddressRoute.DeleteUserAddressFromDB);
-router.get('/',verifyTokenAndAdmin ,  UserAddressRoute.GetUserAddress);
+router.delete('/:id',verifyToken, UserAddressRoute.DeleteUserAddress);
+router.delete('/db/:id',verifyToken, UserAddressRoute.DeleteUserAddressFromDB);
+router.get('/',verifyToken ,  UserAddressRoute.GetUserAddress);
 router.get('/find', verifyToken , UserAddressRoute.FindAUserAddress);
 router.get('/me', verifyToken , UserAddressRoute.GetAddressesOfUser);
 router.post('/SetUserAddress', verifyToken,  UserAddressRoute.SetActiveUserAddress);
