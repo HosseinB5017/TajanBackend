@@ -14,6 +14,8 @@ const UpdateUser = async (req, res, next) => {
     // Remove password and role from the updates object if they exist
     delete updates.password;
     delete updates.role;
+    delete updates.score;
+    delete updates.finance;
 
     try {
         const updatedUser = await UserControllers.findByIdAndUpdate(req.user.id, {

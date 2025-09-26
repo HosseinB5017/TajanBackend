@@ -29,7 +29,7 @@ router.post('/auth/verifyOtpCode', authController.VerifyOtpUser);
 router.post('/auth/LoginUser', authController.LoginAndRegisterUser);
 router.post('/auth/register', authController.RegisterUser);
 router.post('/auth/login', authController.LoginUser);///admin
-router.post('/userInfo',verifyToken ,userController.UserInfo);///admin
+router.get('/userInfo',verifyToken ,userController.UserInfo);///admin
 router.put('/',verifyToken, userController.UpdateUser);
 router.post('/updateProfile' , verifyToken ,upload.single('image'), userController.UpdateProfile);
 router.delete('/:id',verifyTokenAndAdmin, userController.DeleteUser);
