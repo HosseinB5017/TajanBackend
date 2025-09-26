@@ -12,6 +12,7 @@ const city = require("../Route/City");
 const TimeSlots = require("../Route/TimeSlots.Route");
 const state = require("../Route/State");
 const Order = require("../Route/Order.Route.js");
+const Withdrawal = require("../Route/Withdrawal.Route");
 
 
 
@@ -27,6 +28,7 @@ app.use("/state" , state);
 app.use("/UserAddress" , UserAddress);
 app.use("/TimeSlots" , TimeSlots);
 app.use("/Order" , Order);
+app.use("/withdrawal" , Withdrawal);
 
 
 module.exports = app;

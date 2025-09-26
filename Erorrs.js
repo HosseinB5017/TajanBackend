@@ -185,8 +185,14 @@ var OrderNotExist  = {
     en: "Order not Found"
 }
 
+var costIsLessThanThreshold  = {
+    fa : "مبلغ مورد نظر کمتر از حداقل مجاز است!",
+    en: "Amount is Less than threshould"
+}
+
 module.exports = {
     CodeSent,
+    costIsLessThanThreshold,
     AddressIsWrong,
     OrderNotExist,
     SellerAStore,

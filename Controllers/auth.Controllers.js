@@ -7,7 +7,6 @@ const smsController = require('../Utils/SmSController.js');
 const generator = require('../Utils/Generator.js');
 const {Roles} = require("../Utils/Collections");
 const OtpCode = require("../models/OtpCodes.js");
-
 //Register
 
 const RegisterUser = async (req , res , next)=> {
@@ -135,7 +134,9 @@ const VerifyOtpUser = async (req, res, next) => {
                 role : Roles.USER.toString()
             })
             user = await newUser.save();
+
         }
+
 
         const accessToken = jwt.sign({
                 id: user.id,

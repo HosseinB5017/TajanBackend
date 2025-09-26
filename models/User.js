@@ -19,8 +19,10 @@ const UserSchema = new mongoose.Schema(
         score : {type : Number , default : 0 },
         active : {type : Boolean , default : true },
         activeAddress : {type : Schema.Types.ObjectId , ref:  "Address"},
-        userAddress : [{type : Schema.Types.ObjectId , ref:  "Address"}]
-    }, 
+        userAddress : [{type : Schema.Types.ObjectId , ref:  "Address"}],
+        shaba : {type :String , default : ''}
+
+    },
     { timestamps: true},
 );
 
