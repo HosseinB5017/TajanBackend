@@ -49,7 +49,8 @@ const MsgType = {
 
 const FileSection = {
     USERPROFILE : "userProfile",
-    Waste : "waste"
+    Waste : "waste",
+    banner : "banner"
 }
 
 
