@@ -34,6 +34,7 @@ router.put('/',verifyToken, userController.UpdateUser);
 router.post('/updateProfile' , verifyToken ,upload.single('image'), userController.UpdateProfile);
 router.delete('/:id',verifyTokenAndAdmin, userController.DeleteUser);
 router.get('/find',verifyTokenAndAdmin, userController.FindUser);
+router.post('/UpdateByadmin',verifyTokenAndAdmin, userController.updateUserInfoByAdmin);
 router.get('/',verifyTokenAndAdmin, userController.GetAllUsers);
 
 

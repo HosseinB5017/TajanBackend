@@ -1,6 +1,7 @@
 const UserControllers = require("../models/User.js");
 var CryptoJS = require("crypto-js");
 const erorrs = require("../Erorrs.js");
+const City = require("../models/City");
 
 
 //UPDATE
@@ -35,6 +36,20 @@ const UpdateUser = async (req, res, next) => {
     }
 }
 //DELETE
+
+
+const updateUserInfoByAdmin = async (req, res, next) => {
+    try {
+        const updatedUser = await UserControllers.findByIdAndUpdate(req.query.id, req.body, { new: true });
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'user not found' });
+        }
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 
 const DeleteUser = async (req, res, next) => {
     try {
@@ -157,4 +172,4 @@ const GetTimeServer = async (req, res) => {
     }
 }
 
-module.exports = {UpdateUser, UserInfo, DeleteUser, FindUser, GetAllUsers, GetUserState, UpdateProfile, GetTimeServer}
+module.exports = {UpdateUser, updateUserInfoByAdmin, UserInfo, DeleteUser, FindUser, GetAllUsers, GetUserState, UpdateProfile, GetTimeServer}
