@@ -6,6 +6,12 @@ const UserInfo = require("../models/User");
 const RequestWithdrawal = async (req, res) => {
     try {
         const { amount, method, description } = req.body;
+        const withdrawalUser = await UserInfo.findById(req.user.id);
+        if (!withdrawalUser)
+            return res.status(400).json({ error: erorrs.userFound_404 });
+
+        if (withdrawalUser.finance < amount)
+            return res.status(400).json({ error: erorrs.notEnoughCash });
 
         // چک کردن برای درخواست فعال برداشت
         if (!amount || amount <= process.env.withdraThreshold) {
