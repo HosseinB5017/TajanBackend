@@ -8,7 +8,7 @@ router.post('/', verifyToken , controller.CreateOrder);
 router.post('/update/:id', verifyToken , controller.UpdateOrder);
 router.delete('/:id',verifyTokenAndAdmin, controller.DeleteOrder);
 router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteOrderFromDb);
-router.get('/', verifyToken,  controller.GetOrders);
+router.get('/', verifyTokenAndAdmin,  controller.GetOrders);
 router.get('/me', verifyToken,  controller.GetOrdersMe);
 router.get('/find', verifyToken, controller.GetOrderById);
 router.post('/Accept/:id' , verifyTokenAndAdmin, controller.ReceiveOrder);
