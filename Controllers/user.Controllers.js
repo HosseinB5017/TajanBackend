@@ -18,7 +18,6 @@ const UpdateUser = async (req, res, next) => {
     delete updates.score;
     delete updates.finance;
 
-
     console.log(req.body);
 
         const result = await inviteController.checkInvitationCode({
