@@ -86,27 +86,35 @@ const UpdateProfile = async (req, res, next) => {
     }
 }
 
-const FindUser = async (req, res, next) => {
+const FindUser = async (req, res) => {
     try {
-        var users ;
-        if (req.query.id)
-            users = await UserControllers.findById(req.query.id);
-        else if (req.query.username)
-            users = await UserControllers.find({ username: { $regex: req.query.username, $options: "i"}});
-        else if (req.query.role)
-            users = await UserControllers.find({role : req.query.role});
+        let users = [];
 
-        res.status(200).json(
-            users.map(user => {
-                const { password, ...others } = user._doc;
-                return others;
-            })
-        );
+        if (req.query.id) {
+            const user = await UserControllers.findById(req.query.id);
+            users = user ? [user] : [];
+        } else if (req.query.username) {
+            users = await UserControllers.find({
+                username: { $regex: req.query.username, $options: "i" }
+            });
+        } else if (req.query.role) {
+            users = await UserControllers.find({ role: req.query.role });
+        } else {
+            return res.status(400).json({ error: "id یا username یا role الزامی است" });
+        }
 
+        const safeUsers = users.map(u => {
+            const obj = u?.toObject ? u.toObject() : u;
+            const { password, ...others } = obj;
+            return others;
+        });
+
+        return res.status(200).json(safeUsers);
     } catch (err) {
-        res.status(507).json(err);
+        return res.status(507).json(err);
     }
-}
+};
+
 
 const UserInfo = async (req, res, next) => {
     try {
