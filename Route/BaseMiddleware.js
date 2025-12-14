@@ -29,6 +29,7 @@ app.use("/UserAddress" , UserAddress);
 app.use("/TimeSlots" , TimeSlots);
 app.use("/Order" , Order);
 app.use("/withdrawal" , Withdrawal);
+app.use('/invatation' , Invatiation);
 
 
 module.exports = app;

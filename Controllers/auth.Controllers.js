@@ -113,6 +113,7 @@ const VerifyOtpUser = async (req, res, next) => {
         if (!validate.validateOtp(req.body.code)) {
             return  res.status(400).json({error :erorrs.otpCode_400})
         }
+
         const otpcode = await OtpCode.findOne({'phoneNumber': req.body.phoneNumber, 'code': req.body.code});
         if (!otpcode) {
             return  res.status(404).json({error :erorrs.otpCode_404})
