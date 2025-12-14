@@ -1,4 +1,4 @@
-const User = require("../models/UserApp/User.js");
+const User = require("../models/User");
 const validate = require("../Utils/ValidationChecker.js");
 const erorrs = require("../Erorrs.js");
 const Invitation = require("../models/InvitedFriends.js");
