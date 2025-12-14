@@ -37,8 +37,8 @@ const CheckInvitation = async (req, res, next) => {
             return  res.status(400).json({error:erorrs.inviteCode_404});
         }
         var inviteCode = {
-            userBase: userBase._id,
-            friend: req.user.id
+            userBase: userBase._id, /// کسی که دعوت کرده
+            friend: req.user.id // کسی که دعوت شده
         }
         var newInviteCode = new Invitation(inviteCode);
         var invitedCodeSaved = await newInviteCode.save();
@@ -55,5 +55,53 @@ const CheckInvitation = async (req, res, next) => {
     }
 }
 
+const checkInvitationCode = async ({ invitedCode, currentUserId }) => {
+    // اعتبارسنجی فرمت کد دعوت
+    if (!validate.validateInviteCode(invitedCode)) {
+        return {
+            success: false,
+            error: erorrs.phoneNumber_400
+        };
+    }
 
-module.exports = {CheckInvitation , GetInvitationFriends , DeleteInvitationFriend};
+    // پیدا کردن کاربر دعوت‌کننده
+    const userBase = await User.findOne({ invitedCode });
+
+    if (!userBase || userBase.id === currentUserId) {
+        return {
+            success: false,
+            error: erorrs.inviteCode_404
+        };
+    }
+
+    // ساخت دعوت‌نامه
+    try {
+        const inviteCodeObj = {
+            userBase: userBase._id, // دعوت‌کننده
+            friend: currentUserId   // دعوت‌شونده
+        };
+
+        const newInvite = new Invitation(inviteCodeObj);
+        const savedInvite = await newInvite.save();
+        userBase.finance += 50000 ;
+        await userBase.save();
+
+        return {
+            success: true,
+            data: savedInvite
+        };
+
+    } catch (err) {
+        if (err.code === 11000) {
+            return {
+                success: false,
+                error: erorrs.repetitive_422
+            };
+        }
+
+        throw err; // خطای غیرمنتظره
+    }
+};
+
+
+module.exports = {checkInvitationCode , CheckInvitation , GetInvitationFriends , DeleteInvitationFriend};

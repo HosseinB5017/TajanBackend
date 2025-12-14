@@ -2,7 +2,7 @@ const UserControllers = require("../models/User.js");
 var CryptoJS = require("crypto-js");
 const erorrs = require("../Erorrs.js");
 const City = require("../models/City");
-
+const inviteController = require("./Invitation.Controllers");
 
 //UPDATE
 const UpdateUser = async (req, res, next) => {
@@ -18,7 +18,15 @@ const UpdateUser = async (req, res, next) => {
     delete updates.score;
     delete updates.finance;
 
-    try {
+
+        const result = await inviteController.checkInvitationCode({
+            invitedCode: req.body.invitedCode,
+            currentUserId: req.user.id
+        });
+        if (result.success)
+
+
+        try {
         const updatedUser = await UserControllers.findByIdAndUpdate(req.user.id, {
             $set: updates
         }, {new: true});
