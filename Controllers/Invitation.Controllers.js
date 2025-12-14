@@ -83,7 +83,7 @@ const checkInvitationCode = async ({ invitedCode, currentUserId }) => {
 
         const newInvite = new Invitation(inviteCodeObj);
         const savedInvite = await newInvite.save();
-        userBase.finance += 50000 ;
+        userBase.finance += 20000 ;
         await userBase.save();
 
         return {

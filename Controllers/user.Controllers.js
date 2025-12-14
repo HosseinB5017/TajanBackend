@@ -19,13 +19,12 @@ const UpdateUser = async (req, res, next) => {
     delete updates.finance;
 
     console.log(req.body);
-
-     /*   const result = await inviteController.checkInvitationCode({
-            invitedCode: req.body.referralCode,
-            currentUserId: req.user.id
-        });
-        if (result.success)*/
-
+        if (req.body.referralCode) {
+            const result = await inviteController.checkInvitationCode({
+                invitedCode: req.body.referralCode,
+                currentUserId: req.user.id
+            });
+        }
         try {
         const updatedUser = await UserControllers.findByIdAndUpdate(req.user.id, {
             $set: updates
