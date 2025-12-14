@@ -20,11 +20,11 @@ const UpdateUser = async (req, res, next) => {
 
     console.log(req.body);
 
-        const result = await inviteController.checkInvitationCode({
+     /*   const result = await inviteController.checkInvitationCode({
             invitedCode: req.body.referralCode,
             currentUserId: req.user.id
         });
-        if (result.success)
+        if (result.success)*/
 
         try {
         const updatedUser = await UserControllers.findByIdAndUpdate(req.user.id, {
