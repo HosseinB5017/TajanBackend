@@ -20,11 +20,10 @@ const UpdateUser = async (req, res, next) => {
 
 
         const result = await inviteController.checkInvitationCode({
-            invitedCode: req.body.invitedCode,
+            invitedCode: req.body.referralCode,
             currentUserId: req.user.id
         });
         if (result.success)
-
 
         try {
         const updatedUser = await UserControllers.findByIdAndUpdate(req.user.id, {
