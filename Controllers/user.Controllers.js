@@ -19,6 +19,8 @@ const UpdateUser = async (req, res, next) => {
     delete updates.finance;
 
 
+    console.log(req.body);
+
         const result = await inviteController.checkInvitationCode({
             invitedCode: req.body.referralCode,
             currentUserId: req.user.id
