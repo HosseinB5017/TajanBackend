@@ -147,7 +147,7 @@ const GetAllUsers = async (req, res, next) => {
         } else {
             users = await UserControllers.find({}, {}, options);
         }
-        res.status(200).json({"countOfPage": Math.ceil(count / perpage), "CountOfProduct": count, "data": users});
+        res.status(200).json({"countOfPage": Math.ceil(count / perpage), "CountOfUser": count, "data": users});
     } catch (err) {
         res.status(507).json(err);
     }
