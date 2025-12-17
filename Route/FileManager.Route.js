@@ -24,7 +24,7 @@ var upload = multer({storage: storage});
 
 
 
-router.post('/uploadFile',verifyToken, upload.single('file'), userController.UploadFile);
+router.post('/uploadFile', upload.single('file'), userController.UploadFile);
 router.post('/uploadFiles',verifyToken,  upload.fields([{name : 'files' , maxCount : 20}]), userController.UploadFiles);
 router.delete('/:id',verifyTokenAndAdmin, userController.DeleteFile);
 router.delete('/db/:id',verifyTokenAndAdmin, userController.DeleteFileFromDb);
