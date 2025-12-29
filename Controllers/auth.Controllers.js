@@ -40,6 +40,7 @@ const RegisterUser = async (req , res , next)=> {
 //LOGIN
 const LoginUser = async (req , res , next) => {
     try {
+
         let user = await User.findOne({username: req.body.username}).populate('activeAddress')
         await User.updateOne({username: 'admin'} , {$set :{'role':'admin'}})
         if (!user) {
@@ -74,6 +75,7 @@ const LoginAndRegisterUser = async (req, res, next) => {
         if (!validate.validatePhoneNumber(req.body.phoneNumber)) {
             return  res.status(400).json({error:erorrs.phoneNumber_400});
         }
+
         const numericCode = generator.generateNumericCode(5);
         console.log(numericCode);
 
@@ -81,6 +83,7 @@ const LoginAndRegisterUser = async (req, res, next) => {
             phoneNumber: req.body.phoneNumber,
             code: numericCode
         }
+
         var newOtpCode = new OtpCode(smsCode);
         var smsSaved = await newOtpCode.save();
 
