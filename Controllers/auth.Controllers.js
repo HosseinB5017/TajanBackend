@@ -12,6 +12,17 @@ const OtpCode = require("../models/OtpCodes.js");
 const RegisterUser = async (req , res , next)=> {
     const { username, password } = req.body;
 
+
+    const userObj = new User({
+        username : username,
+        password :  CryptoJS.AES.encrypt(password, process.env.PASSWORD_SECRET_KEY).toString(),
+        name : req.body.name,
+        lastName : req.body.lasName,
+        role : "driver"
+    });
+
+    const userSaved =  await userObj.save();
+
     if(!username || !password ) {
         res.status(400).json("Invalid/Incomplete input");
         return
