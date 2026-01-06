@@ -43,6 +43,7 @@ const GetTimeSlots = async (req, res) => {
     try {
         const now = new Date();
 
+        // normalize from/to (مثل کد خودت)
         const fromQ = req.query.from ? new Date(req.query.from) : new Date();
         const from = new Date(fromQ.getFullYear(), fromQ.getMonth(), fromQ.getDate(), 0, 0, 0, 0);
 
@@ -62,34 +63,26 @@ const GetTimeSlots = async (req, res) => {
         ).sort({ day: 1 });
 
         const result = days.reduce((acc, d) => {
-            const dbDay = new Date(d.day);
-            const dayLocal = new Date(
-                dbDay.getUTCFullYear(),
-                dbDay.getUTCMonth(),
-                dbDay.getUTCDate(),
-                0, 0, 0, 0
-            );
+            // d.day ممکنه به صورت UTC midnight ذخیره شده باشه -> از getterهای UTC استفاده می‌کنیم
+            const dbDay = new Date(d.day); // ممکنه بخشی از timezone باشه
+            const dayLocal = new Date(dbDay.getUTCFullYear(), dbDay.getUTCMonth(), dbDay.getUTCDate(), 0, 0, 0, 0);
 
-            const isSameDay =
-                dayLocal.getFullYear() === now.getFullYear() &&
-                dayLocal.getMonth() === now.getMonth() &&
-                dayLocal.getDate() === now.getDate();
+            const isSameDay = dayLocal.getFullYear() === now.getFullYear()
+                && dayLocal.getMonth() === now.getMonth()
+                && dayLocal.getDate() === now.getDate();
 
             const validSlots = (d.slots || []).filter(s => {
                 if (!s || s.remaining <= 0) return false;
 
-                // اگر امروز نیست، همه slotها بازند
-                if (!isSameDay) return true;
+                const [hStr = "00", mStr = "00"] = (s.endTime || "00:00").split(':');
+                const endHour = parseInt(hStr, 10);
+                const endMin = parseInt(mStr, 10);
+                if (Number.isNaN(endHour) || Number.isNaN(endMin)) return false;
 
-                // cutoff ساعت 19:00
-                const cutoff = new Date(
-                    dayLocal.getFullYear(),
-                    dayLocal.getMonth(),
-                    dayLocal.getDate(),
-                    19, 0, 0, 0
-                );
+                // slotEnd را نسبت به dayLocal (که شروع آن روز در زمان محلی است) می‌سازیم
+                const slotEnd = new Date(dayLocal.getFullYear(), dayLocal.getMonth(), dayLocal.getDate(), endHour, endMin, 0, 0);
 
-                return now < cutoff;
+                return isSameDay ? (slotEnd.getTime() > now.getTime()) : true;
             });
 
             if (validSlots.length > 0) {
@@ -108,7 +101,6 @@ const GetTimeSlots = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
-
 
 // همه اسلات‌ها با صفحه‌بندی
 const GetAllTimeSlots = async (req, res) => {
