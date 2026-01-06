@@ -6,7 +6,7 @@ const wastesCategoryRoute = require('../Controllers/WasteCategory.Controllers');
 
 
 router.post('/', verifyToken , wastesCategoryRoute.CreateWasteCategory);
-router.post('/update', verifyToken , wastesCategoryRoute.UpdateWasteCategory);
+router.post('/update/:id', verifyToken , wastesCategoryRoute.UpdateWasteCategory);
 router.delete('/:id',verifyTokenAndAdmin, wastesCategoryRoute.DeleteWasteCategory);
 router.delete('/db/:id',verifyTokenAndAdmin, wastesCategoryRoute.DeleteWasteCategoryFromDB);
 router.get('/', wastesCategoryRoute.GetWastesCategory);
