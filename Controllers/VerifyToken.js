@@ -31,4 +31,14 @@ const verifyTokenAndAdmin = (req, res, next) => {
 
 
 
-module.exports = { verifyToken, verifyTokenAndAdmin };
+const verifyTokenAndDriver = (req, res, next) => {
+    verifyToken(req, res, () => {
+        if(req.user.role === "driver") {
+            next();
+        } else {
+            res.status(405).json(erorrs.TokenNotAuthorized);
+        }
+    })
+};
+
+module.exports = { verifyToken, verifyTokenAndAdmin ,verifyTokenAndDriver };
