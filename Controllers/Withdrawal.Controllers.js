@@ -14,7 +14,7 @@ const RequestWithdrawal = async (req, res) => {
             return res.status(400).json({ error: erorrs.notEnoughCash });
 
         // چک کردن برای درخواست فعال برداشت
-        if (!amount || amount <= process.env.withdraThreshold) {
+        if (!amount || amount < process.env.withdraThreshold) {
             return res.status(400).json({ error: erorrs.costIsLessThanThreshold });
         }
 
