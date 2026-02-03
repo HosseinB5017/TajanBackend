@@ -100,7 +100,7 @@ const ApproveWithdrawal = async (req, res) => {
         if (status == "approved" )
         {
             //ApproveForUser
-            smsController.WithdrawalConfirmationForUser(user.username , withdrawal.amount).then((data) => {
+            smsController.WithdrawalConfirmationForUser(withdrawalUser.username , withdrawal.amount).then((data) => {
                 console.log('SMS sent successfully: WithdrawalConfirmationForUser', data);
             }).catch((error) => {
                 console.error('Failed to send SMS: WithdrawalConfirmationForUser', error.message);
