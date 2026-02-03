@@ -217,7 +217,7 @@ const GetWithdrawals = async (req, res, next) => {
         }
         var result = [];
         let count = 0;
-        result = await objectModel.find(filter, {}, options);
+        result = await objectModel.find(filter, {}, options).populate("user");
         count = await objectModel.countDocuments(filter);
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
