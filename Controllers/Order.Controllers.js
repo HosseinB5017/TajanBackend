@@ -5,6 +5,7 @@ const UserModel = require("../models/User");
 const WasteModel = require("../models/Waste")
 const Address = require("../models/UserAdress");
 const TimeSlot = require("../models/TimeSlot");
+const smsController = require("../Utils/SmSController");
 
 const CreateOrder = async (req, res, next) => {
         try {
@@ -41,6 +42,31 @@ const CreateOrder = async (req, res, next) => {
             };
 
             const newOrder = await new ObjectModel(requestObj).save();
+
+            //RegisterOrderforUser
+            smsController.sendCreateOrderForUser(user.username, newOrder.orderId).then((data) => {
+                console.log('SMS sent successfully: sendCreateOrderForUser', data);
+            }).catch((error) => {
+                console.error('Failed to send SMS: sendCreateOrderForUser', error.message);
+            });
+
+            /// RecciveOrderForDriver
+            smsController.RecciveOrderForDriver( newOrder.orderId).then((data) => {
+                console.log('SMS sent successfully: RecciveOrderForDriver', data);
+            }).catch((error) => {
+                console.error('Failed to send SMS: RecciveOrderForDriver', error.message);
+            });
+
+
+            //RegisterOrderForAdmin
+            smsController.RecciveOrderForAdmin( newOrder.orderId).then((data) => {
+                console.log('SMS sent successfully: RecciveOrderForAdmin', data);
+            }).catch((error) => {
+                console.error('Failed to send SMS: RecciveOrderForAdmin', error.message);
+            });
+
+
+
 
             // 6️⃣ برگرداندن سفارش با populate
             const resultObj = await ObjectModel.findById(newOrder._id)
@@ -130,6 +156,14 @@ const ReceiveOrder = async (req, res, next) => {
             .populate("wastes.item");
 
         res.status(200).json(updatedOrder);
+
+        //ChargeOrderForUser
+        smsController.ChargeWalletForUser(user.username , order.orderId).then((data) => {
+            console.log('SMS sent successfully: ChargeWalletForUser', data);
+        }).catch((error) => {
+            console.error('Failed to send SMS: ChargeWalletForUser', error.message);
+        });
+
     } catch (error) {
         console.error(error);
         res.status(400).json({ error: error.message });

@@ -22,6 +22,7 @@ const CreateWasteCategory = async (req, res, next) => {
 
 const UpdateWasteCategory = async (req, res, next) => {
     try {
+
         const updatedService = await ObjectModel.findByIdAndUpdate(req.params.id, req.body, {new: true});
         if (!updatedService)
             return res.status(200).json({error: erorrs.notFound_404});

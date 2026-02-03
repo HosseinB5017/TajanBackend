@@ -1,6 +1,7 @@
 const erorrs = require("../Erorrs");
 const objectModel = require("../models/Withdrawal");
 const UserInfo = require("../models/User");
+const smsController = require("../Utils/SmSController");
 
 
 const RequestWithdrawal = async (req, res) => {
@@ -26,6 +27,24 @@ const RequestWithdrawal = async (req, res) => {
         });
 
         await withdrawal.save();
+
+
+        //RegisterWithdrawalForUser
+
+        smsController.WithdrawalForUser(withdrawalUser.username , amount).then((data) => {
+            console.log('SMS sent successfully: WithdrawalForUser', data);
+        }).catch((error) => {
+            console.error('Failed to send SMS: WithdrawalForUser', error.message);
+        });
+
+
+        //RecciveWithdrawl
+        smsController.RecciveWithdrawalForAdmin( amount).then((data) => {
+            console.log('SMS sent successfully: RecciveWithdrawalForAdmin', data);
+        }).catch((error) => {
+            console.error('Failed to send SMS: RecciveWithdrawalForAdmin', error.message);
+        });
+
 
         res.status(200).json({
             message: "درخواست برداشت ثبت شد",
@@ -77,6 +96,17 @@ const ApproveWithdrawal = async (req, res) => {
 
         await withdrawal.save();
 
+
+        if (status == "approved" )
+        {
+            //ApproveForUser
+            smsController.WithdrawalConfirmationForUser(user.username , withdrawal.amount).then((data) => {
+                console.log('SMS sent successfully: WithdrawalConfirmationForUser', data);
+            }).catch((error) => {
+                console.error('Failed to send SMS: WithdrawalConfirmationForUser', error.message);
+            });
+
+        }
         res.status(200).json({
             message: `درخواست برداشت ${status === "approved" ? "تایید" : "رد"} شد`,
             data: withdrawal
