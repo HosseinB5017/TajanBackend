@@ -6,7 +6,7 @@ const UserAddressRoute = require('../Controllers/UserAddress.Controllers');
 
 
 router.post('/', verifyToken , UserAddressRoute.CreateUserAddress);
-router.post('/update', verifyToken , UserAddressRoute.UpdateUserAddress);
+router.post('/update/:id', verifyToken , UserAddressRoute.UpdateUserAddress);
 router.delete('/:id',verifyToken, UserAddressRoute.DeleteUserAddress);
 router.delete('/db/:id',verifyToken, UserAddressRoute.DeleteUserAddressFromDB);
 router.get('/',verifyTokenAndAdmin ,  UserAddressRoute.GetUserAddress);

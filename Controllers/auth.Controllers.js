@@ -39,6 +39,40 @@ const RegisterUser = async (req , res , next)=> {
 //});
 
 //LOGIN
+
+
+const changePassword = async (req, res, next) => {
+    try {
+        const { username, oldPassword, newPassword } = req.body;
+
+        // پیدا کردن کاربر
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json("User not found");
+        }
+
+        // رمز قبلی رو از دیتابیس دیکریپت می‌کنیم
+        const hashedPassword = CryptoJS.AES.decrypt(user.password, process.env.PASSWORD_SECRET_KEY);
+        const originalPassword = hashedPassword.toString(CryptoJS.enc.Utf8);
+
+        // چک کردن درستی پسورد قبلی
+        if (originalPassword !== oldPassword) {
+            return res.status(401).json("Old password is incorrect");
+        }
+
+        // پسورد جدید رو رمزنگاری و ذخیره می‌کنیم
+        const encryptedNewPassword = CryptoJS.AES.encrypt(newPassword, process.env.PASSWORD_SECRET_KEY).toString();
+        user.password = encryptedNewPassword;
+        await user.save();
+
+        res.status(200).json("Password changed successfully");
+    } catch (err) {
+        console.error(err);
+        res.status(500).json("Internal Server Error");
+    }
+};
+
+
 const LoginUser = async (req , res , next) => {
     try {
 
@@ -166,4 +200,4 @@ const VerifyOtpUser = async (req, res, next) => {
     }
 }
 
-module.exports = {RegisterUser , LoginUser , LoginAndRegisterUser ,VerifyOtpUser};
+module.exports = {changePassword ,RegisterUser , LoginUser , LoginAndRegisterUser ,VerifyOtpUser};

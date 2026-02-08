@@ -29,6 +29,7 @@ router.post('/auth/verifyOtpCode', authController.VerifyOtpUser);
 router.post('/auth/LoginUser', authController.LoginAndRegisterUser);
 router.post('/auth/register', authController.RegisterUser);
 router.post('/auth/login', authController.LoginUser);///admin
+router.post('/auth/changePass', authController.changePassword);///admin
 router.post('/auth/driver/login', authController.LoginUser);///admin
 router.get('/userInfo',verifyToken ,userController.UserInfo);///admin
 router.put('/',verifyToken, userController.UpdateUser);
