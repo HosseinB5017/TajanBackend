@@ -103,7 +103,7 @@ const GetUserAddress = async (req, res, next) => {
 
 const DeleteUserAddress = async (req, res, next) => {
     try {
-        const result = await ObjectModel.findOneAndUpdate( {_id : req.params.id , $Set : {active : false}});
+        const result = await ObjectModel.findOneAndUpdate( {_id : req.params.id , $set : {active : false}});
         const thisUser =  await userInfo.findById(req.user.id);
         thisUser.userAddress.pull(result._id);
 
