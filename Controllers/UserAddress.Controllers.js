@@ -10,7 +10,7 @@ const CreateUserAddress = async (req, res, next) => {
         });
 
         const newObject = await result.save();
-        const thisUser =  await userInfo.findById(req.user.id);
+        const thisUser = await userInfo.findById(req.user.id);
         thisUser.userAddress.push(newObject._id);
         thisUser.activeAddress = newObject._id;
 
@@ -69,8 +69,8 @@ const GetAddressesOfUser = async (req, res, next) => {
 
         console.log(req.user.id);
 
-        result = await ObjectModel.find({ user : req.user.id}, {}, options);
-        count = await ObjectModel.countDocuments({ user : req.user.id});
+        result = await ObjectModel.find({user: req.user.id}, {}, options);
+        count = await ObjectModel.countDocuments({user: req.user.id});
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
     } catch (error) {
@@ -92,8 +92,11 @@ const GetUserAddress = async (req, res, next) => {
         }
         var result = [];
         let count = 0;
-        result = await ObjectModel.find({}, {}, options);
-        count = await ObjectModel.countDocuments();
+        let filter = {};
+        filter.active = true;
+
+        result = await ObjectModel.find(filter, {}, options);
+        count = await ObjectModel.countDocuments(filter);
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
     } catch (error) {
@@ -104,11 +107,11 @@ const GetUserAddress = async (req, res, next) => {
 const DeleteUserAddress = async (req, res, next) => {
     try {
         const result = await ObjectModel.findOneAndUpdate(
-            { _id: req.params.id },
-            { active: false },   // نیازی به $set هم نیست
-            { new: true }
+            {_id: req.params.id},
+            {active: false},   // نیازی به $set هم نیست
+            {new: true}
         );
-        const thisUser =  await userInfo.findById(req.user.id);
+        const thisUser = await userInfo.findById(req.user.id);
         thisUser.userAddress.pull(result._id);
 
         res.status(200).json(result);
@@ -122,7 +125,7 @@ const SetActiveUserAddress = async (req, res, next) => {
     try {
         const result = await userInfo.findById(req.body.id);
         result.activeAddress = req.body.id;
-        const activeAdd =  await result.save();
+        const activeAdd = await result.save();
 
         res.status(200).json(activeAdd);
     } catch (error) {
@@ -134,7 +137,7 @@ const SetActiveUserAddress = async (req, res, next) => {
 const DeleteUserAddressFromDB = async (req, res, next) => {
     try {
         const result = await ObjectModel.findByIdAndRemove(req.params.id);
-        const thisUser =  await userInfo.findById(req.user.id);
+        const thisUser = await userInfo.findById(req.user.id);
         thisUser.userAddress.pull(result._id);
 
         res.status(200).json(result);
@@ -159,4 +162,13 @@ const FindAUserAddress = async (req, res, next) => {
 };
 
 
-module.exports = {CreateUserAddress, SetActiveUserAddress , DeleteUserAddress  , UpdateUserAddress ,  DeleteUserAddressFromDB ,  FindAUserAddress ,GetAddressesOfUser, GetUserAddress}
+module.exports = {
+    CreateUserAddress,
+    SetActiveUserAddress,
+    DeleteUserAddress,
+    UpdateUserAddress,
+    DeleteUserAddressFromDB,
+    FindAUserAddress,
+    GetAddressesOfUser,
+    GetUserAddress
+}
