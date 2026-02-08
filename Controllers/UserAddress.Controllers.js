@@ -66,11 +66,14 @@ const GetAddressesOfUser = async (req, res, next) => {
 
         var result = [];
         let count = 0;
+        let filter = {};
+        filter.active = true;
+        filter.user = req.user.id;
 
         console.log(req.user.id);
 
-        result = await ObjectModel.find({user: req.user.id}, {}, options);
-        count = await ObjectModel.countDocuments({user: req.user.id});
+        result = await ObjectModel.find(filter, {}, options);
+        count = await ObjectModel.countDocuments(filter);
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
     } catch (error) {
@@ -92,11 +95,10 @@ const GetUserAddress = async (req, res, next) => {
         }
         var result = [];
         let count = 0;
-        let filter = {};
-        filter.active = true;
 
-        result = await ObjectModel.find(filter, {}, options);
-        count = await ObjectModel.countDocuments(filter);
+
+        result = await ObjectModel.find({}, {}, options);
+        count = await ObjectModel.countDocuments();
         res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
     } catch (error) {
