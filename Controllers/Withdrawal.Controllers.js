@@ -87,9 +87,14 @@ const ApproveWithdrawal = async (req, res) => {
         if (!withdrawal) {
             return res.status(404).json({ error: erorrs.notFound_404 });
         }
-        const withdrawalUser = await UserInfo.findById(withdrawal.user);
-        withdrawalUser.finance -= withdrawal.amount;
-        await withdrawalUser.save();
+
+
+        if (status == "approved" ) {
+            const withdrawalUser = await UserInfo.findById(withdrawal.user);
+            withdrawalUser.finance -= withdrawal.amount;
+            await withdrawalUser.save();
+        }
+
         withdrawal.status = status;
         withdrawal.adminDescription = description ;
         withdrawal.processTime = new Date();
@@ -111,6 +116,7 @@ const ApproveWithdrawal = async (req, res) => {
             message: `درخواست برداشت ${status === "approved" ? "تایید" : "رد"} شد`,
             data: withdrawal
         });
+
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -219,7 +225,7 @@ const GetWithdrawals = async (req, res, next) => {
         let count = 0;
         result = await objectModel.find(filter, {}, options).populate("user");
         count = await objectModel.countDocuments(filter);
-        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
+        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result}).sort({ createdAt: -1 });
 
     } catch (error) {
         res.status(400).json({error: error.message});
