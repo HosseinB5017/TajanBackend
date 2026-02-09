@@ -14,6 +14,17 @@ const GetInvitationFriends = async (req, res, next) => {
     }
 }
 
+const GetInvitationFriendsAUser = async (req, res, next) => {
+    try {
+        var friends = await Invitation.find({userBase : req.query.id});
+        res.status(200).json({data:friends});
+
+    } catch (err) {
+        res.status(400).json({error: err.stack})
+        console.error(err.stack);
+    }
+}
+
 const DeleteInvitationFriend = async (req, res, next) => {
     try {
 
@@ -104,4 +115,4 @@ const checkInvitationCode = async ({ invitedCode, currentUserId }) => {
 };
 
 
-module.exports = {checkInvitationCode , CheckInvitation , GetInvitationFriends , DeleteInvitationFriend};
+module.exports = {checkInvitationCode,GetInvitationFriendsAUser , CheckInvitation , GetInvitationFriends , DeleteInvitationFriend};

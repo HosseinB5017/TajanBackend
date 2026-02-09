@@ -8,6 +8,7 @@ const Controller =  require('../Controllers/Invitation.Controllers.js');
 router.post('/check', verifyToken , Controller.CheckInvitation);
 router.delete('/:id',verifyToken, Controller.DeleteInvitationFriend);
 router.get('/all',verifyToken ,Controller.GetInvitationFriends);
+router.get('/admin/all',verifyTokenAndAdmin ,Controller.GetInvitationFriendsAUser);
 
 module.exports = router;
 
