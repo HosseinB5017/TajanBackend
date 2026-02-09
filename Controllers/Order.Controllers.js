@@ -146,21 +146,34 @@ const CancelOrder = async (req, res, next) => {
         }
     }
 };
-const ReceiveOrder = async (req, res, next) => {
+
+const ReceiveOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
-        const { wastes } = req.body; // [{ item: 'id', count: n }, ...]
+        const { wastes, desc } = req.body;
 
         const order = await ObjectModel.findById(orderId).populate("wastes.item");
-        if (!order) return res.status(404).json({ error: erorrs.OrderNotExist });
-        var user =  await UserModel.findById(order.user);
+        if (!order)
+            return res.status(404).json({ error: erorrs.OrderNotExist });
+
+        const user = await UserModel.findById(order.user);
         if (!user)
             return res.status(400).json({ error: erorrs.userFound_404 });
 
-        // 1. بروزرسانی لیست زباله‌ها
+        const wasCollectedBefore = order.status === "collected";
+
+        // اگر قبلاً جمع‌آوری شده بود → برگشت مقادیر قبلی
+        if (wasCollectedBefore) {
+            user.finance -= order.totalPrice || 0;
+            user.score -= 5;
+            if (user.score < 0) user.score = 0;
+        }
+
+        // آپدیت سفارش
         order.wastes = wastes;
-        order.desc = req.body.desc;
-        // 2. محاسبه totalPrice
+        order.desc = desc;
+
+        // محاسبه مجدد totalPrice
         let total = 0;
         for (let w of wastes) {
             const wasteItem = await WasteModel.findById(w.item);
@@ -169,17 +182,16 @@ const ReceiveOrder = async (req, res, next) => {
             }
         }
         order.totalPrice = total;
-        user.finance +=total;
-        user.score +=5;/// امتیاز
 
-        await user.save();
+        // اضافه کردن مقادیر جدید
+        user.finance += total;
+        user.score += 5;
 
-        // 3. تغییر وضعیت
+        // وضعیت و زمان دریافت
         order.status = "collected";
-
-        // 4. ثبت زمان دریافت توسط سفیر
         order.receiveTime = new Date();
 
+        await user.save();
         await order.save();
 
         const updatedOrder = await ObjectModel.findById(orderId)
@@ -190,12 +202,15 @@ const ReceiveOrder = async (req, res, next) => {
 
         res.status(200).json(updatedOrder);
 
-        //ChargeOrderForUser
-        smsController.ChargeWalletForUser(user.username , order.orderId).then((data) => {
-            console.log('SMS sent successfully: ChargeWalletForUser', data);
-        }).catch((error) => {
-            console.error('Failed to send SMS: ChargeWalletForUser', error.message);
-        });
+        // ارسال SMS فقط بعد از موفقیت
+        smsController
+            .ChargeWalletForUser(user.username, order.totalPrice)
+            .then((data) => {
+                console.log('SMS sent successfully: ChargeWalletForUser', data);
+            })
+            .catch((error) => {
+                console.error('Failed to send SMS: ChargeWalletForUser', error.message);
+            });
 
     } catch (error) {
         console.error(error);
