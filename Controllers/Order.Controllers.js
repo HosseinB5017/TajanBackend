@@ -113,6 +113,39 @@ const UpdateOrder = async (req, res, next) => {
     }
 };
 
+
+const CancelOrder = async (req, res, next) => {
+    try {
+        const updatedOrder = await ObjectModel.findByIdAndUpdate(
+            req.params.id,
+            {
+                status: "canceled",
+                desc: req.body.desc,
+                recciveTime : new Date()
+            },
+            { new: true }
+        );
+
+        if (!updatedOrder) {
+            return res.status(404).json({ error: erorrs.notFound_404 });
+        }
+
+        const resultObj = await ObjectModel.findById(updatedOrder._id)
+            .populate("user")
+            .populate("address")
+            .populate("timeSlot")
+            .populate("wastes.item");
+
+        res.status(200).json(resultObj);
+
+    } catch (error) {
+        if (error.code === 11000) {
+            res.status(422).json({ error: erorrs.repetitive_422 });
+        } else {
+            res.status(400).json({ error: error.message });
+        }
+    }
+};
 const ReceiveOrder = async (req, res, next) => {
     try {
         const orderId = req.params.id;
@@ -324,6 +357,7 @@ module.exports = {
     DeleteOrder,
     DeleteOrderFromDb,
     ReceiveOrder,
-    GetOrdersMe
+    GetOrdersMe,
+    CancelOrder
 };
 

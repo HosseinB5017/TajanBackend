@@ -15,7 +15,7 @@ const OrderSchema = new mongoose.Schema(
         timeSlot: { type: schema.Types.ObjectId, ref: "TimeSlot", required: true },
         slot: { type: schema.Types.ObjectId, ref: "SlotSchema", required: true },
         active: { type: Boolean, default: true },    // فعال/غیرفعال
-        status: {
+        status : {
                     type: String,
                     enum: ["pending", "collected", "cancelled"],
                     default: "pending",

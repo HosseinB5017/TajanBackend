@@ -14,6 +14,7 @@ router.get('/admin/', verifyTokenAndAdmin ,  controller.GetOrders);
 router.get('/me', verifyToken,  controller.GetOrdersMe);
 router.get('/find', verifyToken, controller.GetOrderById);
 router.post('/Accept/:id' , verifyTokenAndDriver, controller.ReceiveOrder);
+router.post('/Cancel/:id' , verifyToken, controller.CancelOrder);
 router.post('/admin/Accept/:id' , verifyTokenAndAdmin, controller.ReceiveOrder);
 
 
