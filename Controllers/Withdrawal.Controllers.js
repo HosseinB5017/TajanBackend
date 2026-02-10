@@ -88,9 +88,9 @@ const ApproveWithdrawal = async (req, res) => {
             return res.status(404).json({ error: erorrs.notFound_404 });
         }
 
-
+        let withdrawalUser ;
         if (status == "approved" ) {
-            const withdrawalUser = await UserInfo.findById(withdrawal.user);
+             withdrawalUser = await UserInfo.findById(withdrawal.user);
             withdrawalUser.finance -= withdrawal.amount;
             await withdrawalUser.save();
         }
