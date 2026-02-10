@@ -119,7 +119,7 @@ const CancelOrder = async (req, res, next) => {
         const updatedOrder = await ObjectModel.findByIdAndUpdate(
             req.params.id,
             {
-                status: "canceled",
+                status: "cancelled",
                 desc: req.body.desc,
                 recciveTime : new Date()
             },
