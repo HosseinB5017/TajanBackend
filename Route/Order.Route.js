@@ -9,7 +9,7 @@ router.post('/update/:id', verifyTokenAndDriver , controller.UpdateOrder);
 router.post('/admin/update/:id', verifyTokenAndDriver , controller.UpdateOrder);
 router.delete('/:id',verifyTokenAndAdmin, controller.DeleteOrder);
 router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteOrderFromDb);
-router.get('/', verifyTokenAndDriver ,  controller.GetOrders);
+router.get('/', verifyTokenAndDriver ,  controller.GetOrdersBySortTime);
 router.get('/admin/', verifyTokenAndAdmin ,  controller.GetOrders);
 router.get('/me', verifyToken,  controller.GetOrdersMe);
 router.get('/find', verifyToken, controller.GetOrderById);

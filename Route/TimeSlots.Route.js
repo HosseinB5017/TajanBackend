@@ -6,7 +6,7 @@ const controller = require('../Controllers/TimeSlot.Controllers');
 
 
 router.post('/', verifyTokenAndAdmin , controller.CreateTimeSlot);
-router.post('/update', verifyTokenAndAdmin , controller.UpdateTimeSlot);
+router.post('/update/:id', verifyTokenAndAdmin , controller.UpdateTimeSlot);
 router.delete('/:id',verifyTokenAndAdmin, controller.DeleteTimeSlot);
 router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteSlotTimesFromDB);
 router.get('/',verifyToken , controller.GetAllTimeSlots);

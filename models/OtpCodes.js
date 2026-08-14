@@ -4,7 +4,7 @@ const OtpCodes = new mongoose.Schema(
     {
             code : {type: String , default : 0},
             phoneNumber  :  {type :String , required: true  },
-             expiresAt: { type: Date, default: () => new Date(Date.now() + 50 * 60 * 1000), required: true }
+             expiresAt: { type: Date, default: () => new Date(Date.now() + 3 * 60 * 1000), required: true }
 
     },
 { timestamps: true},

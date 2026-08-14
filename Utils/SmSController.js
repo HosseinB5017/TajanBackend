@@ -31,6 +31,7 @@ function sendOtp( to, text = '') {
                 resolve(response);
             })
             .catch(error => {
+                console.log(error)
                 reject(error);
             });
     });

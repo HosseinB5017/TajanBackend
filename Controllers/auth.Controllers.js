@@ -51,13 +51,15 @@ const changePassword = async (req, res, next) => {
             return res.status(404).json("User not found");
         }
 
-        // رمز قبلی رو از دیتابیس دیکریپت می‌کنیم
-        const hashedPassword = CryptoJS.AES.decrypt(user.password, process.env.PASSWORD_SECRET_KEY);
-        const originalPassword = hashedPassword.toString(CryptoJS.enc.Utf8);
+        if  (req.user.role != "admin") {
+            // رمز قبلی رو از دیتابیس دیکریپت می‌کنیم
+            const hashedPassword = CryptoJS.AES.decrypt(user.password, process.env.PASSWORD_SECRET_KEY);
+            const originalPassword = hashedPassword.toString(CryptoJS.enc.Utf8);
 
-        // چک کردن درستی پسورد قبلی
-        if (originalPassword !== oldPassword) {
-            return res.status(401).json("Old password is incorrect");
+            // چک کردن درستی پسورد قبلی
+            if (originalPassword !== oldPassword) {
+                return res.status(401).json("Old password is incorrect");
+            }
         }
 
         // پسورد جدید رو رمزنگاری و ذخیره می‌کنیم
@@ -77,7 +79,7 @@ const LoginUser = async (req , res , next) => {
     try {
 
         let user = await User.findOne({username: req.body.username}).populate('activeAddress')
-        await User.updateOne({username: 'admin'} , {$set :{'role':'admin'}})
+       // await User.updateOne({username: 'admin'} , {$set :{'role':'admin'}})
         if (!user) {
             res.status(401).json("Wrong Credentials");
             return;
@@ -127,6 +129,9 @@ const LoginAndRegisterUser = async (req, res, next) => {
             return   res.status(200).json(erorrs.CodeSent);
         }).catch((error) => {
             console.error('Failed to send SMS:', error.message);
+            console.error('Failed to send SMS 1 :', error.stack);
+            console.error('Failed to send SMS2:', error);
+            
             return   res.status(400).json({error : erorrs.otpCode_SamaneErorr});
         });
 

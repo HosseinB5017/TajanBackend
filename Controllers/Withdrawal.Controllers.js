@@ -6,7 +6,7 @@ const smsController = require("../Utils/SmSController");
 
 const RequestWithdrawal = async (req, res) => {
     try {
-        const { amount, method, description } = req.body;
+        const { amount, method, description , name } = req.body;
         const withdrawalUser = await UserInfo.findById(req.user.id);
         if (!withdrawalUser)
             return res.status(400).json({ error: erorrs.userFound_404 });
@@ -23,15 +23,21 @@ const RequestWithdrawal = async (req, res) => {
             user: req.user.id,   // فرض می‌کنیم از توکن یوزر اومده
             amount,
             method,
-            description
+            description,
+            name
         });
 
         await withdrawal.save();
 
 
         //RegisterWithdrawalForUser
+        const amountText = Intl.NumberFormat('fa-IR', {
+            maximumFractionDigits: 0
+        }).format(amount || 0) + " هزار";
+    /// تومان داخل پیامک هس در ملی پیامک
+        console.log(amountText)
 
-        smsController.WithdrawalForUser(withdrawalUser.username , amount).then((data) => {
+        smsController.WithdrawalForUser(withdrawalUser.username , amountText).then((data) => {
             console.log('SMS sent successfully: WithdrawalForUser', data);
         }).catch((error) => {
             console.error('Failed to send SMS: WithdrawalForUser', error.message);

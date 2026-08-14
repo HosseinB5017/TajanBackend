@@ -15,6 +15,7 @@ const WithdrawalSchema = new mongoose.Schema(
                     enum: ["pending", "approved", "rejected"],
                     default: "pending"
             }, // وضعیت برداشت
+            name : { type: String, default: ""},
             description: { type: String, default: "" }, // توضیحات اضافی
             adminDescription: { type: String, default: "" }, // توضیحات اضافی
             requestTime: { type: Date, default: Date.now }, // زمان ثبت درخواست

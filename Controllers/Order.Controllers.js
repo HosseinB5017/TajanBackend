@@ -89,9 +89,31 @@ const CreateOrder = async (req, res, next) => {
 
 const UpdateOrder = async (req, res, next) => {
     try {
+        const updateData = { ...req.body };
+
+        // اگر wastes ارسال شده، قیمت لحظه‌ای هر آیتم رو snapshot بگیر
+        if (updateData.wastes && Array.isArray(updateData.wastes)) {
+            let total = 0;
+            const enrichedWastes = [];
+            for (let w of updateData.wastes) {
+                const wasteItem = await WasteModel.findById(w.item);
+                const snapshotPrice = wasteItem ? (wasteItem.price || 0) : 0;
+                const snapshotTitle = wasteItem ? (wasteItem.title || '') : '';
+                total += snapshotPrice * (w.count || 0);
+                enrichedWastes.push({
+                    item: w.item,
+                    count: w.count || 0,
+                    price: snapshotPrice,
+                    title: snapshotTitle
+                });
+            }
+            updateData.wastes = enrichedWastes;
+            updateData.totalPrice = Math.round(total);
+        }
+
         const updatedOrder = await ObjectModel.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             { new: true }
         );
         if (!updatedOrder)
@@ -173,18 +195,26 @@ const ReceiveOrder = async (req, res) => {
         order.wastes = wastes;
         order.desc = desc;
 
-        // محاسبه مجدد totalPrice
+        // محاسبه مجدد totalPrice و snapshot قیمت لحظه‌ای هر آیتم
         let total = 0;
+        const enrichedWastes = [];
         for (let w of wastes) {
             const wasteItem = await WasteModel.findById(w.item);
-            if (wasteItem) {
-                total += (wasteItem.price || 0) * (w.count || 0);
-            }
+            const snapshotPrice = wasteItem ? (wasteItem.price || 0) : 0;
+            const snapshotTitle = wasteItem ? (wasteItem.title || '') : '';
+            total += snapshotPrice * (w.count || 0);
+            enrichedWastes.push({
+                item: w.item,
+                count: w.count || 0,
+                price: snapshotPrice,
+                title: snapshotTitle
+            });
         }
-        order.totalPrice = total;
+        order.wastes = enrichedWastes;
+        order.totalPrice = Math.round(total);
 
         // اضافه کردن مقادیر جدید
-        user.finance += total;
+        user.finance += Math.round(total);
         user.score += 5;
 
         // وضعیت و زمان دریافت
@@ -200,17 +230,22 @@ const ReceiveOrder = async (req, res) => {
             .populate("timeSlot")
             .populate("wastes.item");
 
-        res.status(200).json(updatedOrder);
+
+        const amountText = Intl.NumberFormat('fa-IR', {
+            maximumFractionDigits: 0
+        }).format(order.totalPrice || 0) + " هزار تومان";
 
         // ارسال SMS فقط بعد از موفقیت
         smsController
-            .ChargeWalletForUser(user.username, order.totalPrice)
+            .ChargeWalletForUser(user.username, amountText)
             .then((data) => {
                 console.log('SMS sent successfully: ChargeWalletForUser', data);
             })
             .catch((error) => {
                 console.error('Failed to send SMS: ChargeWalletForUser', error.message);
             });
+
+        res.status(200).json(updatedOrder);
 
     } catch (error) {
         console.error(error);
@@ -257,6 +292,113 @@ const GetOrders = async (req, res, next) => {
             CountOfData: filtered.length,
             data: filtered
         });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+
+const GetOrdersBySortTime = async (req, res) => {
+    try {
+        let filter = {};
+        if (req.query.status) filter.status = req.query.status;
+        if (req.query.user) filter.user = new mongoose.Types.ObjectId(req.query.user);
+
+        let page = parseInt(req.query.page) || 1;
+        let perpage = parseInt(req.query.perpage) || 10;
+
+        if  (req.query.status != "pending" )
+        {
+            const result = await ObjectModel.find(filter)
+                .populate("user")
+                .populate("address")
+                .populate("timeSlot")
+                .populate("wastes.item")
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * perpage)
+                .limit(perpage);
+
+            // 2️⃣ اضافه کردن selectedSlot به هر سفارش
+            const enriched = result.map(order => {
+                const selectedSlot = order.timeSlot?.slots.id(order.slot) || null;
+                return {
+                    ...order.toObject(),
+                    selectedSlot
+                };
+            });
+
+            // 3️⃣ شمارش کل داده‌ها برای صفحه‌بندی
+            const count = await ObjectModel.countDocuments(filter);
+
+            // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
+            const filtered = enriched.filter(order => order.user && order.user.activeAddress);
+
+            res.status(200).json({
+                CountOfPage: Math.ceil(count / perpage),
+                CountOfData: filtered.length,
+                data: filtered
+            });
+        }
+        else {
+            const data = await ObjectModel.aggregate([
+                {$match: filter},
+
+                // join timeSlot
+                {
+                    $lookup: {
+                        from: "timeslots",
+                        localField: "timeSlot",
+                        foreignField: "_id",
+                        as: "timeSlot"
+                    }
+                },
+                {$unwind: "$timeSlot"},
+
+                // 🔥 سورت بر اساس روز
+                {$sort: {"timeSlot.day": 1}},
+
+                // pagination
+                {$skip: (page - 1) * perpage},
+                {$limit: perpage},
+
+                // join user
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "user",
+                        foreignField: "_id",
+                        as: "user"
+                    }
+                },
+                {$unwind: "$user"},
+
+                // join address
+                {
+                    $lookup: {
+                        from: "addresses",
+                        localField: "address",
+                        foreignField: "_id",
+                        as: "address"
+                    }
+                },
+                {$unwind: "$address"},
+            ]);
+
+            // اضافه کردن selectedSlot
+            const enriched = data.map(order => {
+                const selectedSlot =
+                    order.timeSlot?.slots?.find(s => s._id.toString() === order.slot.toString()) || null;
+                return {...order, selectedSlot};
+            });
+
+            const count = await ObjectModel.countDocuments(filter);
+
+            res.status(200).json({
+                CountOfPage: Math.ceil(count / perpage),
+                CountOfData: enriched.length,
+                data: enriched
+            });
+        }
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -373,6 +515,7 @@ module.exports = {
     DeleteOrderFromDb,
     ReceiveOrder,
     GetOrdersMe,
-    CancelOrder
+    CancelOrder,
+    GetOrdersBySortTime
 };
 
