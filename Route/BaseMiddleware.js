@@ -14,9 +14,9 @@ const state = require("../Route/State");
 const Order = require("../Route/Order.Route.js");
 const Withdrawal = require("../Route/Withdrawal.Route");
 const Invatiation = require("../Route/Invitation.Route");
-
-
-
+const Shops = require("../Route/Shop.Route");
+const ServiceOrders = require("../Route/ServiceOrder.Route");
+const Notifications = require("../Route/Notification.Route");
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
@@ -29,9 +29,12 @@ app.use("/state" , state);
 app.use("/UserAddress" , UserAddress);
 app.use("/TimeSlots" , TimeSlots);
 app.use("/Order" , Order);
+app.use("/orders", Order);
 app.use("/withdrawal" , Withdrawal);
 app.use('/invatation' , Invatiation);
-
+app.use("/shops", Shops);
+app.use("/service-orders", ServiceOrders);
+app.use("/notifications", Notifications);
 
 module.exports = app;
 

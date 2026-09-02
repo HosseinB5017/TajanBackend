@@ -213,7 +213,7 @@ const GetWithdrawalOfUser = async (req, res, next) => {
 };
 
 const GetWithdrawals = async (req, res, next) => {
-    try {
+   try {
         let filter = {};
 
         if (req.query.status) filter.status = req.query.status;
@@ -231,11 +231,11 @@ const GetWithdrawals = async (req, res, next) => {
         let count = 0;
         result = await objectModel.find(filter, {}, options).populate("user");
         count = await objectModel.countDocuments(filter);
-        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result}).sort({ createdAt: -1 });
+        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
 
-    } catch (error) {
-        res.status(400).json({error: error.message});
-    }
+     } catch (error) {
+         res.status(400).json({error: error.message});
+     }
 };
 
 module.exports = { RequestWithdrawal  ,UpdateWithdrawal, ApproveWithdrawal , DeleteWithdrawal  , DeleteWithdrawalFromDb,FoundWithdrawal , GetWithdrawals , GetWithdrawalOfUser}

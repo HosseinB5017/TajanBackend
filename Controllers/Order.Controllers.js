@@ -425,7 +425,14 @@ const GetOrdersMe = async (req, res, next) => {
 
         // 2️⃣ اضافه کردن selectedSlot به هر سفارش
         const enriched = result.map(order => {
-            const selectedSlot = order.timeSlot?.slots.id(order.slot) || null;
+            let selectedSlot = null;
+            if (order.timeSlot && Array.isArray(order.timeSlot.slots)) {
+                if (typeof order.timeSlot.slots.id === "function") {
+                    selectedSlot = order.timeSlot.slots.id(order.slot);
+                } else {
+                    selectedSlot = order.timeSlot.slots.find(s => s._id?.toString() === order.slot?.toString()) || null;
+                }
+            }
 
             return {
                 ...order.toObject(),
@@ -436,19 +443,25 @@ const GetOrdersMe = async (req, res, next) => {
         // 3️⃣ شمارش کل داده‌ها برای صفحه‌بندی
         const count = await ObjectModel.countDocuments(filter);
 
-        // 4️⃣ فیلتر فقط user.activeAddress اگر لازم است
-
         const cleaned = enriched.map(order => {
-            const obj = order.toObject ? order.toObject() : { ...order }; // اگه mongoose doc بود
+            const obj = order.toObject ? order.toObject() : { ...order };
             if (obj.timeSlot) {
                 delete obj.timeSlot.slots;
             }
             return obj;
         });
 
+        const totalPages = Math.ceil(count / perpage);
+
         res.status(200).json({
-            CountOfPage: Math.ceil(count / perpage),
-            CountOfData: cleaned.length,
+            CountOfPage: totalPages,
+            totalPages: totalPages,
+            pages: totalPages,
+            CountOfData: count,
+            total: count,
+            currentPage: page,
+            page: page,
+            orders: cleaned,
             data: cleaned
         });
     } catch (error) {
