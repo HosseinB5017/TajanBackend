@@ -542,6 +542,202 @@ const removeTeamMember = async (req, res) => {
     }
 };
 
+// ======================= SHOP TIME SLOTS CONTROLLERS =======================
+
+// Get all time slots of a shop
+const getShopTimeSlots = async (req, res) => {
+    try {
+        const shopId = req.params.shopId || req.params.id;
+        const shop = await Shop.findById(shopId);
+        if (!shop) return res.status(404).json({ error: "فروشگاه پیدا نشد" });
+
+        return res.status(200).json(shop.timeSlots || []);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// Create a time slot for shop
+const createShopTimeSlot = async (req, res) => {
+    try {
+        const shopId = req.params.shopId || req.params.id;
+        const shop = await Shop.findById(shopId);
+        if (!shop) return res.status(404).json({ error: "فروشگاه پیدا نشد" });
+
+        const isOwner = shop.owner.toString() === req.user.id;
+        const isAdmin = req.user.role === "admin";
+        const isTeam = shop.teamMembers && shop.teamMembers.some((m) => m.user.toString() === req.user.id && m.active);
+        if (!isOwner && !isAdmin && !isTeam) return res.status(403).json({ error: erorrs.TokenNotAuthorized });
+
+        // بررسی اینکه آیا body یک آرایه از بازه‌هاست یا یک شیء منفرد
+        const incomingSlots = Array.isArray(req.body) ? req.body : (Array.isArray(req.body.slots) ? req.body.slots : [req.body]);
+
+        if (!shop.timeSlots) {
+            shop.timeSlots = [];
+        }
+
+        const addedSlots = [];
+
+        for (const item of incomingSlots) {
+            const {
+                dayOfWeek,
+                day,
+                startTime,
+                endTime,
+                time,
+                duration,
+                capacity,
+                leadTimeHours,
+                active
+            } = item;
+
+            let finalStartTime = startTime;
+            let finalEndTime = endTime;
+
+            // اگر فرانت فیلد time را به شکل "10:00 - 12:00" یا "10:00-12:00" فرستاده باشد
+            if ((!finalStartTime || !finalEndTime) && time && typeof time === "string") {
+                const parts = time.split(/[-–—]/).map(s => s.trim());
+                if (parts.length >= 2) {
+                    finalStartTime = parts[0];
+                    finalEndTime = parts[1];
+                }
+            }
+
+            if (!finalStartTime || !finalEndTime) {
+                return res.status(400).json({
+                    error: "ساعت شروع و پایان بازه الزامی است (startTime و endTime یا time مانند '10:00 - 12:00')",
+                    receivedBody: req.body
+                });
+            }
+
+            const slotCapacity = capacity !== undefined ? parseInt(capacity) : 10;
+            const newSlot = {
+                dayOfWeek: dayOfWeek !== undefined ? parseInt(dayOfWeek) : undefined,
+                day: day || "",
+                startTime: finalStartTime,
+                endTime: finalEndTime,
+                duration: duration !== undefined ? parseInt(duration) : 60,
+                capacity: slotCapacity,
+                remaining: slotCapacity,
+                leadTimeHours: leadTimeHours !== undefined ? parseFloat(leadTimeHours) : 0,
+                active: active !== undefined ? Boolean(active) : true
+            };
+
+            shop.timeSlots.push(newSlot);
+            addedSlots.push(shop.timeSlots[shop.timeSlots.length - 1]);
+        }
+
+        await shop.save();
+
+        return res.status(201).json(Array.isArray(req.body) || Array.isArray(req.body?.slots) ? addedSlots : addedSlots[0]);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// Update a time slot
+const updateShopTimeSlot = async (req, res) => {
+    try {
+        const { shopId, slotId } = req.params;
+        const shop = await Shop.findById(shopId);
+        if (!shop) return res.status(404).json({ error: "فروشگاه پیدا نشد" });
+
+        const isOwner = shop.owner.toString() === req.user.id;
+        const isAdmin = req.user.role === "admin";
+        const isTeam = shop.teamMembers && shop.teamMembers.some((m) => m.user.toString() === req.user.id && m.active);
+        if (!isOwner && !isAdmin && !isTeam) return res.status(403).json({ error: erorrs.TokenNotAuthorized });
+
+        const slot = shop.timeSlots.id(slotId);
+        if (!slot) return res.status(404).json({ error: "بازه زمانی پیدا نشد" });
+
+        const { dayOfWeek, day, startTime, endTime, duration, capacity, remaining, leadTimeHours, active } = req.body;
+
+        if (dayOfWeek !== undefined) slot.dayOfWeek = parseInt(dayOfWeek);
+        if (day !== undefined) slot.day = day;
+        if (startTime !== undefined) slot.startTime = startTime;
+        if (endTime !== undefined) slot.endTime = endTime;
+        if (duration !== undefined) slot.duration = parseInt(duration);
+        if (capacity !== undefined) slot.capacity = parseInt(capacity);
+        if (remaining !== undefined) slot.remaining = parseInt(remaining);
+        if (leadTimeHours !== undefined) slot.leadTimeHours = parseFloat(leadTimeHours);
+        if (active !== undefined) slot.active = Boolean(active);
+
+        await shop.save();
+        return res.status(200).json(slot);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete a time slot
+const deleteShopTimeSlot = async (req, res) => {
+    try {
+        const { shopId, slotId } = req.params;
+        const shop = await Shop.findById(shopId);
+        if (!shop) return res.status(404).json({ error: "فروشگاه پیدا نشد" });
+
+        const isOwner = shop.owner.toString() === req.user.id;
+        const isAdmin = req.user.role === "admin";
+        const isTeam = shop.teamMembers && shop.teamMembers.some((m) => m.user.toString() === req.user.id && m.active);
+        if (!isOwner && !isAdmin && !isTeam) return res.status(403).json({ error: erorrs.TokenNotAuthorized });
+
+        shop.timeSlots.pull(slotId);
+        await shop.save();
+        return res.status(200).json({ message: "بازه زمانی با موفقیت حذف شد" });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+// Get valid delivery slots for user checkout with Lead Time calculation
+const getShopValidDeliverySlots = async (req, res) => {
+    try {
+        const shopId = req.params.shopId || req.params.id;
+        const shop = await Shop.findById(shopId);
+        if (!shop) return res.status(404).json({ error: "فروشگاه پیدا نشد" });
+
+        const now = new Date();
+        const slots = shop.timeSlots || [];
+
+        const validSlots = slots.map(slot => {
+            const slotObj = slot.toObject ? slot.toObject() : slot;
+            const [hStr = "00", mStr = "00"] = (slot.startTime || "00:00").split(":");
+            const startHour = parseInt(hStr, 10);
+            const startMin = parseInt(mStr, 10);
+
+            // محاسبه مهلت زمانی (Cutoff Time):
+            // اگر leadTimeHours مثبت باشد (مثلاً 2): ثبت تا 2 ساعت قبل از شروع بازه مجاز است.
+            // اگر leadTimeHours منفی باشد (مثلاً -0.5 یا -1 یا -2): ثبت تا 30 دقیقه، 1 ساعت یا 2 ساعت بعد از شروع بازه مجاز است.
+            // فرمول یکپارچه: Cutoff Time = Slot Start Time - (leadTimeHours * 60 min)
+            // به عنوان مثال: leadTimeHours = -0.5 => Cutoff = 18:00 - (-30) = 18:30
+            const cutoffMinutes = (slot.leadTimeHours !== undefined ? slot.leadTimeHours : 0) * 60;
+            const slotStartTotalMin = startHour * 60 + startMin;
+            const currentTotalMin = now.getHours() * 60 + now.getMinutes();
+            const cutoffTotalMin = slotStartTotalMin - cutoffMinutes;
+
+            const isPassedCutoff = currentTotalMin > cutoffTotalMin;
+            const isCapacityFull = (slot.remaining !== undefined ? slot.remaining : slot.capacity) <= 0;
+            const isAvailable = slot.active && !isPassedCutoff && !isCapacityFull;
+
+            let statusLabel = "available"; // 'available' | 'expired' | 'full' | 'inactive'
+            if (!slot.active) statusLabel = "inactive";
+            else if (isCapacityFull) statusLabel = "full";
+            else if (isPassedCutoff) statusLabel = "expired";
+
+            return {
+                ...slotObj,
+                isAvailable,
+                statusLabel,
+                cutoffTimeMinutes: cutoffTotalMin
+            };
+        });
+
+        return res.status(200).json(validSlots);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     getShops,
     getShopById,
@@ -556,5 +752,10 @@ module.exports = {
     updateStock,
     getInventoryLogs,
     addTeamMember,
-    removeTeamMember
+    removeTeamMember,
+    getShopTimeSlots,
+    createShopTimeSlot,
+    updateShopTimeSlot,
+    deleteShopTimeSlot,
+    getShopValidDeliverySlots
 };

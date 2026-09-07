@@ -4,6 +4,45 @@ const erorrs = require("../Erorrs.js");
 const City = require("../models/City");
 const inviteController = require("./Invitation.Controllers");
 
+const CreateUser = async (req, res) => {
+    const { email, lastName, name, nationalId, password, phoneNumber, role, username } = req.body;
+    const allowedRoles = ["user", "driver", "shop_owner", "admin"];
+
+    if (typeof username !== "string" || !username.trim() ||
+        typeof password !== "string" || !password ||
+        !allowedRoles.includes(role)) {
+        return res.status(400).json({
+            error: "نام کاربری، رمز عبور و نقش معتبر الزامی است"
+        });
+    }
+
+    try {
+        const existingUser = await UserControllers.findOne({ username: username.trim() });
+        if (existingUser) {
+            return res.status(422).json({ error: "نام کاربری قبلاً استفاده شده است" });
+        }
+
+        const user = await UserControllers.create({
+            email,
+            lastName,
+            name,
+            nationalId,
+            username: username.trim(),
+            password: CryptoJS.AES.encrypt(password, process.env.PASSWORD_SECRET_KEY).toString(),
+            phoneNumber,
+            role
+        });
+
+        const { password: savedPassword, ...safeUser } = user.toObject();
+        return res.status(201).json(safeUser);
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(422).json({ error: erorrs.repetitive_422 });
+        }
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 //UPDATE
 const UpdateUser = async (req, res, next) => {
 
@@ -17,6 +56,8 @@ const UpdateUser = async (req, res, next) => {
     delete updates.role;
     delete updates.score;
     delete updates.finance;
+    delete updates.isBlocked;
+    delete updates.blockReason;
 
     console.log(req.body);
         if (req.body.referralCode) {
@@ -178,6 +219,37 @@ const GetUserState = async (req, res, next) => {
 //})
 }
 
+const BlockOrUnblockUser = async (req, res, next) => {
+    try {
+        const { id, isBlocked, blockReason } = req.body;
+        const userId = id || req.query.id;
+
+        if (!userId) {
+            return res.status(400).json({ error: "شناسه کاربر (id) الزامی است" });
+        }
+
+        const user = await UserControllers.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "کاربر پیدا نشد" });
+        }
+
+        user.isBlocked = isBlocked !== undefined ? Boolean(isBlocked) : !user.isBlocked;
+        if (blockReason !== undefined) {
+            user.blockReason = blockReason;
+        }
+
+        await user.save();
+
+        const { password, ...others } = user._doc;
+        return res.status(200).json({
+            message: user.isBlocked ? "کاربر با موفقیت مسدود شد" : "کاربر با موفقیت رفع مسدودیت شد",
+            user: others
+        });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 const GetTimeServer = async (req, res) => {
     try {
         const currentTime = new Date();
@@ -187,4 +259,4 @@ const GetTimeServer = async (req, res) => {
     }
 }
 
-module.exports = {UpdateUser, updateUserInfoByAdmin, UserInfo, DeleteUser, FindUser, GetAllUsers, GetUserState, UpdateProfile, GetTimeServer}
+module.exports = {CreateUser, UpdateUser, updateUserInfoByAdmin, BlockOrUnblockUser, UserInfo, DeleteUser, FindUser, GetAllUsers, GetUserState, UpdateProfile, GetTimeServer}

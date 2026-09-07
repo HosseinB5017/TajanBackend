@@ -30,4 +30,12 @@ router.get("/:shopId/inventory/logs", verifyToken, controller.getInventoryLogs);
 router.post("/:shopId/team", verifyToken, controller.addTeamMember);
 router.delete("/:shopId/team/:memberId", verifyToken, controller.removeTeamMember);
 
+// Shop Time Slots & Scheduling
+router.get("/:shopId/time-slots", verifyToken, controller.getShopTimeSlots);
+router.get("/:shopId/time-slots/valid", verifyToken, controller.getShopValidDeliverySlots);
+router.post("/:shopId/time-slots", verifyToken, controller.createShopTimeSlot);
+router.put("/:shopId/time-slots/:slotId", verifyToken, controller.updateShopTimeSlot);
+router.delete("/:shopId/time-slots/:slotId", verifyToken, controller.deleteShopTimeSlot);
+router.get("/:shopId/valid-slots", verifyToken, controller.getShopValidDeliverySlots);
+
 module.exports = router;

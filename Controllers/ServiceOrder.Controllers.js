@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Address = require("../models/UserAdress");
 const InventoryLog = require("../models/InventoryLog");
 const ShopNotification = require("../models/ShopNotification");
+const Transaction = require("../models/Transaction");
 const erorrs = require("../Erorrs.js");
 
 // Helper function to create Service / Shop Order
@@ -188,13 +189,26 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
 
         // Process selectedSlot if string or object
         let processedSlot = {};
+        const incomingDeliveryTime = req.body.deliveryTime || req.body.slot || "";
+        const incomingSlotStr = typeof req.body.slot === "string" ? req.body.slot : "";
+
         if (typeof selectedSlot === "string") {
-            processedSlot = { slotString: selectedSlot };
+            processedSlot = { slotString: selectedSlot, day: "", startTime: "", endTime: "" };
         } else if (selectedSlot && typeof selectedSlot === "object") {
             processedSlot = {
                 timeSlot: selectedSlot.timeSlot || undefined,
                 slot: selectedSlot.slot || undefined,
-                slotString: selectedSlot.slotString || ""
+                slotString: selectedSlot.slotString || incomingDeliveryTime || incomingSlotStr || "",
+                startTime: selectedSlot.startTime || "",
+                endTime: selectedSlot.endTime || "",
+                day: selectedSlot.day || ""
+            };
+        } else if (incomingDeliveryTime) {
+            processedSlot = {
+                slotString: incomingDeliveryTime,
+                day: "",
+                startTime: "",
+                endTime: ""
             };
         }
 
@@ -208,12 +222,12 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             address: finalAddressId,
             addressDetails: finalAddressDetails,
             selectedSlot: processedSlot,
+            slot: incomingSlotStr || incomingDeliveryTime || processedSlot.slotString || "",
+            deliveryTime: incomingDeliveryTime || incomingSlotStr || processedSlot.slotString || "",
             status: "pending",
             totalPrice: calculatedTotalPrice,
             deliveryFee: effectiveDeliveryCost,
             deliveryCost: effectiveDeliveryCost,
-            discount: 0,
-            finalPrice: finalPrice,
             discount: 0,
             finalPrice: finalPrice,
             paymentMethod: selectedPaymentMethod,
@@ -230,6 +244,26 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
         });
 
         const savedOrder = await newOrder.save();
+
+        // If paid via wallet, create a transaction record
+        if (selectedPaymentMethod === "wallet") {
+            const userDoc = await User.findById(req.user.id);
+            await new Transaction({
+                user: req.user.id,
+                type: "order_payment",
+                direction: "out",
+                amount: finalPrice,
+                title: `پرداخت سفارش «${shop.name || "فروشگاه"}» #${savedOrder.orderId}`,
+                description: `کسر از کیف پول برای خرید سفارش #${savedOrder.orderId}`,
+                referenceId: String(savedOrder.orderId),
+                orderId: String(savedOrder.orderId),
+                serviceOrder: savedOrder._id,
+                shop: shop._id,
+                shopName: shop.name || "",
+                status: "successful",
+                balanceAfter: userDoc ? userDoc.finance : 0
+            }).save();
+        }
 
         // Log inventory deductions
         for (const item of verifiedItems) {
@@ -496,13 +530,46 @@ const getServiceOrderById = async (req, res) => {
     try {
         const order = await ServiceOrder.findById(req.params.id)
             .populate("shop")
-            .populate("user", "username name lastName");
+            .populate("user", "username name lastName profileImg")
+            .populate({
+                path: "address",
+                populate: { path: "Address.city", select: "name title" }
+            });
 
         if (!order) {
             return res.status(404).json({ error: "سفارش پیدا نشد" });
         }
 
-        return res.status(200).json(order);
+        const doc = order.toObject();
+        let addressObj = doc.addressDetails || {};
+        if (order.address && order.address.Address) {
+            const addr = order.address.Address;
+            addressObj = {
+                title: addr.title || "",
+                boulevard: addr.boulevard || "",
+                alley: addr.alley || "",
+                plaque: addr.plaque || "",
+                unit: addr.unit || "",
+                cityName: (addr.city && (addr.city.name || addr.city.title)) || doc.addressDetails?.city || "",
+                postalCode: addr.postalCode || "",
+                lat: addr.lat || 0,
+                lng: addr.lng || 0,
+                fullAddress: doc.addressDetails?.fullAddress || ""
+            };
+        }
+
+        // Add phoneNumber alias to user object if exists
+        const userObj = doc.user ? {
+            ...doc.user,
+            phoneNumber: doc.user.username || ""
+        } : null;
+
+        return res.status(200).json({
+            ...doc,
+            user: userObj,
+            address: addressObj,
+            fullAddress: doc.addressDetails?.fullAddress || (doc.address?.fullAddress || "")
+        });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
@@ -630,10 +697,27 @@ const rejectOrder = async (req, res) => {
 
         // Refund wallet if paid via wallet
         if (order.paymentStatus === "paid" && order.paymentMethod === "wallet") {
+            const refundAmount = order.finalPrice || order.totalPrice || 0;
             const orderUser = await User.findById(order.user);
             if (orderUser) {
-                orderUser.finance = (orderUser.finance || 0) + (order.finalPrice || order.totalPrice || 0);
+                orderUser.finance = (orderUser.finance || 0) + refundAmount;
                 await orderUser.save();
+
+                await new Transaction({
+                    user: order.user,
+                    type: "order_refund",
+                    direction: "in",
+                    amount: refundAmount,
+                    title: `برگشت مبلغ سفارش «${shop ? shop.name : "فروشگاه"}» #${order.orderId}`,
+                    description: `علت رد سفارش: ${order.rejectionReason || "عدم امکان پاسخگویی"}`,
+                    referenceId: String(order.orderId),
+                    orderId: String(order.orderId),
+                    serviceOrder: order._id,
+                    shop: order.shop,
+                    shopName: shop ? shop.name : "",
+                    status: "successful",
+                    balanceAfter: orderUser.finance
+                }).save();
             }
             order.paymentStatus = "pending";
         }
@@ -655,34 +739,49 @@ const rejectOrder = async (req, res) => {
     }
 };
 
-// Cancel order by User or Admin
+// Cancel order by User, Shop Owner / Manager, or Admin
 const cancelOrder = async (req, res) => {
     try {
-        const { reason } = req.body;
+        const { reason, message } = req.body;
+        const cancelReason = reason || message || "لغو شده";
         const order = await ServiceOrder.findById(req.params.id);
         if (!order) return res.status(404).json({ error: "سفارش پیدا نشد" });
 
+        const shop = await Shop.findById(order.shop);
         const isUser = order.user.toString() === req.user.id;
+        const isOwner = shop && shop.owner.toString() === req.user.id;
+        const isTeam = shop && shop.teamMembers.some((m) => m.user.toString() === req.user.id && ["manager", "operator"].includes(m.role));
         const isAdmin = req.user.role === "admin";
-        if (!isUser && !isAdmin) {
+
+        // خریدار: فقط در وضعیت pending
+        // مدیر فروشگاه: در وضعیت pending و accepted
+        // ادمین کل: در همه وضعیت‌ها
+        if (isUser) {
+            if (order.status !== "pending") {
+                return res.status(400).json({ error: "کاربر فقط امکان لغو سفارش در وضعیت در انتظار تایید را دارد" });
+            }
+        } else if (isOwner || isTeam) {
+            if (!["pending", "accepted"].includes(order.status)) {
+                return res.status(400).json({ error: "فروشگاه فقط امکان لغو سفارش در وضعیت‌های در انتظار و تایید شده را دارد" });
+            }
+        } else if (!isAdmin) {
             return res.status(403).json({ error: erorrs.TokenNotAuthorized });
         }
 
-        if (!["pending", "accepted"].includes(order.status)) {
+        if (["cancelled", "rejected", "delivered"].includes(order.status)) {
             return res.status(400).json({ error: "امکان لغو این سفارش در این مرحله وجود ندارد" });
         }
 
         order.status = "cancelled";
-        order.cancellationReason = reason || "لغو شده توسط کاربر";
+        order.cancellationReason = cancelReason;
         order.timeline.push({
             status: "cancelled",
             date: new Date(),
-            comment: `سفارش لغو شد: ${order.cancellationReason}`,
+            comment: `سفارش لغو شد: ${cancelReason}`,
             actor: req.user.id
         });
 
         // Restore stock
-        const shop = await Shop.findById(order.shop);
         if (shop) {
             for (const item of order.orderedProducts) {
                 const prod = shop.products.id(item.product);
@@ -704,10 +803,27 @@ const cancelOrder = async (req, res) => {
 
         // Refund wallet if paid via wallet
         if (order.paymentStatus === "paid" && order.paymentMethod === "wallet") {
+            const refundAmount = order.finalPrice || order.totalPrice || 0;
             const orderUser = await User.findById(order.user);
             if (orderUser) {
-                orderUser.finance = (orderUser.finance || 0) + (order.finalPrice || order.totalPrice || 0);
+                orderUser.finance = (orderUser.finance || 0) + refundAmount;
                 await orderUser.save();
+
+                await new Transaction({
+                    user: order.user,
+                    type: "order_refund",
+                    direction: "in",
+                    amount: refundAmount,
+                    title: `برگشت مبلغ سفارش «${shop ? shop.name : "فروشگاه"}» #${order.orderId}`,
+                    description: `علت لغو: ${cancelReason}`,
+                    referenceId: String(order.orderId),
+                    orderId: String(order.orderId),
+                    serviceOrder: order._id,
+                    shop: order.shop,
+                    shopName: shop ? shop.name : "",
+                    status: "successful",
+                    balanceAfter: orderUser.finance
+                }).save();
             }
             order.paymentStatus = "pending";
         }
@@ -716,11 +832,11 @@ const cancelOrder = async (req, res) => {
 
         if (shop) {
             await new ShopNotification({
-                recipient: shop.owner,
+                recipient: isUser ? shop.owner : order.user,
                 shop: shop._id,
                 order: order._id,
                 title: `سفارش #${order.orderId} لغو شد`,
-                message: `سفارش لغو شد به دلیل: ${order.cancellationReason}${order.paymentMethod === "wallet" ? " - مبلغ به کیف پول بازگردانده شد." : ""}`,
+                message: `سفارش لغو شد به دلیل: ${cancelReason}${order.paymentMethod === "wallet" ? " - مبلغ به کیف پول بازگردانده شد." : ""}`,
                 type: "order_status_change"
             }).save();
         }
@@ -746,6 +862,10 @@ const getShopDashboardStats = async (req, res) => {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
+        const startOf30DaysAgo = new Date();
+        startOf30DaysAgo.setDate(startOf30DaysAgo.getDate() - 30);
+        startOf30DaysAgo.setHours(0, 0, 0, 0);
+
         const [
             totalOrders,
             todayOrders,
@@ -753,6 +873,7 @@ const getShopDashboardStats = async (req, res) => {
             completedOrders,
             cancelledOrders,
             revenueData,
+            monthlyChartData,
             topProductsData,
             recentOrders
         ] = await Promise.all([
@@ -764,6 +885,37 @@ const getShopDashboardStats = async (req, res) => {
             ServiceOrder.aggregate([
                 { $match: { shop: shop._id, status: "delivered" } },
                 { $group: { _id: null, totalRevenue: { $sum: "$totalPrice" } } }
+            ]),
+            ServiceOrder.aggregate([
+                {
+                    $match: {
+                        shop: shop._id,
+                        createdAt: { $gte: startOf30DaysAgo },
+                        status: { $nin: ["cancelled", "rejected"] }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                        },
+                        count: { $sum: 1 },
+                        revenue: {
+                            $sum: {
+                                $cond: [{ $eq: ["$status", "delivered"] }, "$totalPrice", 0]
+                            }
+                        }
+                    }
+                },
+                { $sort: { _id: 1 } },
+                {
+                    $project: {
+                        _id: 0,
+                        day: "$_id",
+                        count: 1,
+                        revenue: 1
+                    }
+                }
             ]),
             ServiceOrder.aggregate([
                 { $match: { shop: shop._id, status: { $nin: ["cancelled", "rejected"] } } },
@@ -804,6 +956,7 @@ const getShopDashboardStats = async (req, res) => {
             revenue: totalRevenue,
             totalRevenue,
             todayOrders,
+            monthlyChart: monthlyChartData,
             topProducts: topProductsData,
             totalStock: shop.totalStock,
             recentOrders

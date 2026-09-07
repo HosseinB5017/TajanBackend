@@ -1,5 +1,26 @@
 # Quick Reference: Water & Bread Services
 
+## User Management API
+
+### Create User
+
+`POST /api/users` (admin token required)
+
+```json
+{
+  "email": "hossein.bazsee@gmail.com",
+  "lastName": "بزئی",
+  "name": "محمد",
+  "nationalId": "0",
+  "username": "new-user",
+  "password": "secret",
+  "phoneNumber": "09156235017",
+  "role": "shop_owner"
+}
+```
+
+Allowed roles are `user`, `driver`, `shop_owner`, and `admin`. The response contains the created user without its password.
+
 ## 🔗 User Navigation Routes
 
 | Route | Purpose |

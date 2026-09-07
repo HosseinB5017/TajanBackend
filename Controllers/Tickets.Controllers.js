@@ -12,9 +12,9 @@ const CreateTicketsModel = async (req, res, next) => {
     try {
         const { typeTicket, title, desc } = req.body;
         let files = [];
-        let fileCount =0;
+        let fileCount = 0;
 
-        if (req.files["files"] && req.files["files"].length > 0) {
+        if (req.files && req.files["files"] && req.files["files"].length > 0) {
             fileCount = req.files["files"].length;
             files = req.files["files"].map(file => process.env.baseUrl + process.env.ticketFiles + file.filename);
             console.log("Uploaded filenames:", files);

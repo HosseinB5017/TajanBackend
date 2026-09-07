@@ -32,11 +32,13 @@ router.post('/auth/login', authController.LoginUser);///admin
 router.post('/auth/changePass',verifyToken ,authController.changePassword);///admin
 router.post('/auth/driver/login', authController.LoginUser);///admin
 router.get('/userInfo',verifyToken ,userController.UserInfo);///admin
+router.post('/', verifyTokenAndAdmin, userController.CreateUser);
 router.put('/',verifyToken, userController.UpdateUser);
 router.post('/updateProfile' , verifyToken ,upload.single('image'), userController.UpdateProfile);
 router.delete('/:id',verifyTokenAndAdmin, userController.DeleteUser);
 router.get('/find',verifyTokenAndAdmin, userController.FindUser);
 router.post('/UpdateByadmin',verifyTokenAndAdmin, userController.updateUserInfoByAdmin);
+router.post('/toggleBlock', verifyTokenAndAdmin, userController.BlockOrUnblockUser);
 router.get('/',verifyTokenAndAdmin, userController.GetAllUsers);
 
 

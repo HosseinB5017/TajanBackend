@@ -17,6 +17,7 @@ const Invatiation = require("../Route/Invitation.Route");
 const Shops = require("../Route/Shop.Route");
 const ServiceOrders = require("../Route/ServiceOrder.Route");
 const Notifications = require("../Route/Notification.Route");
+const Transactions = require("../Route/Transaction.Route");
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
@@ -35,6 +36,7 @@ app.use('/invatation' , Invatiation);
 app.use("/shops", Shops);
 app.use("/service-orders", ServiceOrders);
 app.use("/notifications", Notifications);
+app.use("/transactions", Transactions);
 
 module.exports = app;
 

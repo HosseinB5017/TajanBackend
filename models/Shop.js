@@ -36,6 +36,21 @@ const ShopTeamMemberSchema = new mongoose.Schema(
     { _id: true }
 );
 
+const ShopTimeSlotSchema = new mongoose.Schema(
+    {
+        dayOfWeek: { type: Number, required: false }, // 0: شنبه تا 6: جمعه (یا بر اساس فرمت انتخابی)
+        day: { type: String, default: "" }, // شنبه، یکشنبه، ... یا تاریخ مشخص
+        startTime: { type: String, required: true }, // '10:00'
+        endTime: { type: String, required: true }, // '12:00'
+        duration: { type: Number, default: 60 }, // دقیقه: 60 یا 120
+        capacity: { type: Number, default: 10 },
+        remaining: { type: Number, default: 10 },
+        leadTimeHours: { type: Number, default: 0 }, // حداقل ساعت قبل از بازه برای ثبت سفارش
+        active: { type: Boolean, default: true }
+    },
+    { _id: true, timestamps: true }
+);
+
 const ShopSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
@@ -56,6 +71,7 @@ const ShopSchema = new mongoose.Schema(
         active: { type: Boolean, default: true },
         products: [ProductSchema],
         teamMembers: [ShopTeamMemberSchema],
+        timeSlots: [ShopTimeSlotSchema],
         totalStock: { type: Number, default: 0 },
         available: { type: Boolean, default: true },
         minOrderAmount: { type: Number, default: 0 },

@@ -84,6 +84,15 @@ const LoginUser = async (req , res , next) => {
             res.status(401).json("Wrong Credentials");
             return;
         }
+
+        if (user.isBlocked || user.active === false) {
+            return res.status(403).json({
+                error: erorrs.notActiveUser,
+                message: "حساب کاربری شما مسدود شده است",
+                isBlocked: true
+            });
+        }
+
         const hashedPassword = CryptoJS.AES.decrypt(user.password, process.env.PASSWORD_SECRET_KEY);
         const originalPassword = hashedPassword.toString(CryptoJS.enc.Utf8);
 
@@ -179,6 +188,14 @@ const VerifyOtpUser = async (req, res, next) => {
             })
             user = await newUser.save();
 
+        }
+
+        if (user.isBlocked || user.active === false) {
+            return res.status(403).json({
+                error: erorrs.notActiveUser,
+                message: "حساب کاربری شما مسدود شده است",
+                isBlocked: true
+            });
         }
 
 

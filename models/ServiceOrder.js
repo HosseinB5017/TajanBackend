@@ -44,8 +44,13 @@ const ServiceOrderSchema = new mongoose.Schema(
         selectedSlot: {
             timeSlot: { type: schema.Types.ObjectId, ref: "TimeSlot", required: false },
             slot: { type: schema.Types.ObjectId, ref: "SlotSchema", required: false },
-            slotString: { type: String, default: "" }
+            slotString: { type: String, default: "" },
+            startTime: { type: String, default: "" },
+            endTime: { type: String, default: "" },
+            day: { type: String, default: "" }
         },
+        deliveryTime: { type: String, default: "" },
+        slot: { type: String, default: "" },
         status: {
             type: String,
             enum: ["pending", "accepted", "ready", "shipped", "delivered", "cancelled", "rejected"],
