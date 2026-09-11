@@ -282,7 +282,7 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
 
         // Create notification for shop owner
         const serviceNameMap = {
-            water: "آب تسویه",
+            water: "آب تصفیه کن",
             bread: "نان",
             restaurant: "رستوران",
             supermarket: "سوپرمارکت",

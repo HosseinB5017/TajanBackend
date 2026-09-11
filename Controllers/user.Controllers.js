@@ -173,20 +173,38 @@ const UserInfo = async (req, res, next) => {
 const GetAllUsers = async (req, res, next) => {
 
     const query = req.query.new;
-    const page = req.query.page;
-    const perpage = req.query.perpage;
+    const page = Number(req.query.page) || 1;
+    const perpage = Number(req.query.perpage) || 10;
+    const filter = {};
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        filter.$or = [
+            { username: { $regex: escapedSearch, $options: "i" } },
+            { name: { $regex: escapedSearch, $options: "i" } },
+            { lastName: { $regex: escapedSearch, $options: "i" } },
+            { email: { $regex: escapedSearch, $options: "i" } },
+            { phoneNumber: { $regex: escapedSearch, $options: "i" } }
+        ];
+    }
+
+    if (req.query.role) {
+        filter.role = req.query.role;
+    }
+
     const options = {
         skip: ((page - 1) * perpage), limit: perpage
     }
-    let count = await UserControllers.countDocuments({});
+    let count = await UserControllers.countDocuments(filter);
 
     try {
         let users;
         if (query) {
-            users = await UserControllers.find().sort({_id: -1}).limit(query);
+            users = await UserControllers.find(filter).sort({_id: -1}).limit(Number(query));
             count = users.length;
         } else {
-            users = await UserControllers.find({}, {}, options);
+            users = await UserControllers.find(filter, {}, options).sort({_id: -1});
         }
         res.status(200).json({"countOfPage": Math.ceil(count / perpage), "CountOfUser": count, "data": users});
     } catch (err) {

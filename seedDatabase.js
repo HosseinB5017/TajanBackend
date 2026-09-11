@@ -97,7 +97,7 @@ async function seed() {
             username: "shop_water",
             password: encryptPassword("water123"),
             name: "علی",
-            lastName: "رضایی (مالک آب تسویه)",
+            lastName: "رضایی (مالک آب تصفیه کن)",
             email: "water_shop@pasmand.ir",
             nationalId: "0921234568",
             role: "shop_owner",
