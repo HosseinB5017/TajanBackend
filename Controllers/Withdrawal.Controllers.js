@@ -186,26 +186,31 @@ const GetWithdrawalOfUser = async (req, res, next) => {
         let filter = {};
         if (req.query.status) filter.status = req.query.status;
 
-        filter.user = filter.user = req.user.id;
+        filter.user = req.user.id;
 
-        let page;
-        req.query.page ? page = req.query.page : page = 1;
-        let perpage;
-        req.query.perpage ? perpage = req.query.perpage : perpage = 10;
+        const page = parseInt(req.query.page) || 1;
+        const perpage = parseInt(req.query.perpage) || 10;
 
-        const options = {
-            skip: ((page - 1) * perpage),
-            limit: perpage
+        let sort = { _id: -1 };
+        if (req.query.id) {
+            sort = { _id: parseInt(req.query.id) === 1 ? 1 : -1 };
         }
 
-        var result = [];
-        let count = 0;
+        const skip = (page - 1) * perpage;
+        const count = await objectModel.countDocuments(filter);
 
-        console.log(req.user.id);
+        const result = await objectModel.find(filter)
+            .sort(sort)
+            .skip(skip)
+            .limit(perpage);
 
-        result = await objectModel.find(filter, {}, options);
-        count = await objectModel.countDocuments(filter);
-        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
+        res.status(200).json({
+            data: result,
+            CountOfData: count,
+            CountOfPage: Math.ceil(count / perpage),
+            page: page,
+            perpage: perpage
+        });
 
     } catch (error) {
         res.status(400).json({error: error.message});
@@ -218,20 +223,30 @@ const GetWithdrawals = async (req, res, next) => {
 
         if (req.query.status) filter.status = req.query.status;
 
-        let page;
-        req.query.page ? page = req.query.page : page = 1;
-        let perpage;
-        req.query.perpage ? perpage = req.query.perpage : perpage = 10;
+        const page = parseInt(req.query.page) || 1;
+        const perpage = parseInt(req.query.perpage) || 10;
 
-        const options = {
-            skip: ((page - 1) * perpage),
-            limit: perpage
+        let sort = { _id: -1 };
+        if (req.query.id) {
+            sort = { _id: parseInt(req.query.id) === 1 ? 1 : -1 };
         }
-        var result = [];
-        let count = 0;
-        result = await objectModel.find(filter, {}, options).populate("user");
-        count = await objectModel.countDocuments(filter);
-        res.status(200).json({"CountOfPage": Math.ceil(count / perpage), "CountOfData": result.length, "data": result});
+
+        const skip = (page - 1) * perpage;
+        const count = await objectModel.countDocuments(filter);
+
+        const result = await objectModel.find(filter)
+            .populate("user")
+            .sort(sort)
+            .skip(skip)
+            .limit(perpage);
+
+        res.status(200).json({
+            data: result,
+            CountOfData: count,
+            CountOfPage: Math.ceil(count / perpage),
+            page: page,
+            perpage: perpage
+        });
 
      } catch (error) {
          res.status(400).json({error: error.message});
