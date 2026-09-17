@@ -32,9 +32,21 @@ app.use(express.json());
 app.use('/api' , baseMiddleWare);
 app.use('/api/FileManager' ,fileDownloader );
 
-app.get('/download/Files/:filename', function(req, res){
-    var file = __dirname+"/" +process.env.filePath + req.params.filename;
-    res.download(file);
+// Static serve download directories
+const path = require('path');
+app.use('/download', express.static(path.join(__dirname, 'Download')));
+app.use('/download', express.static(path.join(__dirname, 'download')));
+
+// Legacy file download route (by filename)
+app.get(['/download/Files/:filename', '/download/files/:filename'], function(req, res){
+    var filePath = path.join(__dirname, process.env.filePath || 'download/files/', req.params.filename);
+    res.download(filePath, function(err) {
+        if (err) {
+            if (!res.headersSent) {
+                res.status(404).json({ error: "File not found" });
+            }
+        }
+    });
 });
 
 
