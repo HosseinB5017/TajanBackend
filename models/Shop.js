@@ -5,6 +5,7 @@ const ProductVariantSchema = new mongoose.Schema(
     {
         name: { type: String, required: true }, // e.g., '20 لیتری', 'بسته 10 تایی'
         price: { type: Number, required: true, default: 0 },
+        basePrice: { type: Number, required: false },
         stock: { type: Number, required: true, default: 0 },
         available: { type: Boolean, default: true },
         description: { type: String, default: "" }
@@ -17,7 +18,9 @@ const ProductSchema = new mongoose.Schema(
         name: { type: String, required: true },
         description: { type: String, default: "" },
         image: { type: String, default: "" },
+        images: [{ type: String }],
         price: { type: Number, required: true, default: 0 },
+        basePrice: { type: Number, required: false },
         stock: { type: Number, required: true, default: 0 },
         available: { type: Boolean, default: true },
         category: { type: String, default: "" },

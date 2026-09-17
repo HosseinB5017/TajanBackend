@@ -256,19 +256,29 @@ const addProductToShop = async (req, res) => {
             return res.status(403).json({ error: erorrs.TokenNotAuthorized });
         }
 
-        const { name, description, image, price, stock, category, variants } = req.body;
+        const { name, description, image, img, images, price, basePrice, stock, category, variants } = req.body;
         if (!name) {
             return res.status(400).json({ error: "نام محصول الزامی است" });
         }
 
+        const effectivePrice = basePrice !== undefined ? basePrice : (price || 0);
+        const effectiveImage = image || img || "";
+        const formattedVariants = (variants || []).map(v => ({
+            ...v,
+            price: v.basePrice !== undefined ? v.basePrice : (v.price || 0),
+            basePrice: v.basePrice !== undefined ? v.basePrice : (v.price || 0)
+        }));
+
         const newProduct = {
             name,
             description: description || "",
-            image: image || "",
-            price: price || 0,
+            image: effectiveImage,
+            images: images || (effectiveImage ? [effectiveImage] : []),
+            price: effectivePrice,
+            basePrice: effectivePrice,
             stock: stock || 0,
             category: category || "",
-            variants: variants || [],
+            variants: formattedVariants,
             available: true,
             active: true
         };
@@ -317,15 +327,29 @@ const updateProduct = async (req, res) => {
             return res.status(404).json({ error: "محصول پیدا نشد" });
         }
 
-        const fields = ["name", "description", "image", "price", "stock", "category", "available", "active"];
+        const fields = ["name", "description", "image", "price", "basePrice", "stock", "category", "available", "active", "images"];
         fields.forEach((field) => {
             if (req.body[field] !== undefined) {
                 product[field] = req.body[field];
             }
         });
-       console.log("Updated variant:", req.body.variant.stock);
+
+        if (req.body.img !== undefined && req.body.image === undefined) {
+            product.image = req.body.img;
+        }
+
+        if (req.body.basePrice !== undefined && req.body.price === undefined) {
+            product.price = req.body.basePrice;
+        } else if (req.body.price !== undefined && req.body.basePrice === undefined) {
+            product.basePrice = req.body.price;
+        }
+
         if (req.body.variants) {
-            product.variants = req.body.variants;
+            product.variants = req.body.variants.map(v => ({
+                ...v,
+                price: v.basePrice !== undefined ? v.basePrice : (v.price || 0),
+                basePrice: v.basePrice !== undefined ? v.basePrice : (v.price || 0)
+            }));
         }
 
         // Recalculate totalStock

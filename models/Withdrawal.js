@@ -1,8 +1,10 @@
 const mongoose = require("mongoose");
 const schema = mongoose.Schema;
+const autoIncrement = require("mongoose-sequence")(mongoose);
 
 const WithdrawalSchema = new mongoose.Schema(
     {
+            id: { type: Number, default: 0 },
             user: { type: schema.Types.ObjectId, ref: "User", required: true }, // کاربر یا سفیر
             amount: { type: Number, required: true }, // مبلغ برداشت
             method: {
@@ -16,6 +18,8 @@ const WithdrawalSchema = new mongoose.Schema(
                     default: "pending"
             }, // وضعیت برداشت
             name : { type: String, default: ""},
+            shaba: { type: String, default: "" }, // شماره شبا
+            iban: { type: String, default: "" }, // شماره شبا / شبا بانکی
             description: { type: String, default: "" }, // توضیحات اضافی
             adminDescription: { type: String, default: "" }, // توضیحات اضافی
             requestTime: { type: Date, default: Date.now }, // زمان ثبت درخواست
@@ -25,5 +29,7 @@ const WithdrawalSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+WithdrawalSchema.plugin(autoIncrement, { inc_field: "id", id: "withdrawal_seq" });
 
 module.exports = mongoose.model("WithdrawalHistory", WithdrawalSchema);

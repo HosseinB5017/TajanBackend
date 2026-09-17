@@ -12,6 +12,7 @@ router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteWithdrawalFromDb);
 router.get('/', verifyToken,  controller.GetWithdrawals);
 router.get('/me', verifyToken,  controller.GetWithdrawalOfUser);
 router.get('/find', verifyToken, controller.FoundWithdrawal);
+router.get('/:id', verifyToken, controller.GetWithdrawalById);
 
 
 module.exports = router;

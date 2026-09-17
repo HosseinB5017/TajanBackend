@@ -50,7 +50,8 @@ const MsgType = {
 const FileSection = {
     USERPROFILE : "userProfile",
     Waste : "waste",
-    banner : "banner"
+    banner : "banner",
+    product : "product"
 }
 
 

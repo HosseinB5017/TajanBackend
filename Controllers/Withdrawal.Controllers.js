@@ -160,24 +160,115 @@ const DeleteWithdrawal = async (req, res, next) => {
     }
 };
 
+const GetWithdrawalById = async (req, res, next) => {
+    try {
+        const idParam = req.params.id || req.query.id;
+        if (!idParam) {
+            return res.status(404).json({ error: erorrs.notFound_404 });
+        }
+
+        let query = {};
+        if (idParam.match(/^[0-9a-fA-F]{24}$/)) {
+            query = { _id: idParam };
+        } else if (!isNaN(Number(idParam))) {
+            query = { id: Number(idParam) };
+        } else {
+            query = { _id: null };
+        }
+
+        const withdrawal = await objectModel.findOne(query).populate("user");
+        if (!withdrawal) {
+            return res.status(404).json({ error: erorrs.notFound_404 });
+        }
+
+        const doc = withdrawal.toObject();
+        const userObj = doc.user ? {
+            _id: doc.user._id,
+            name: doc.user.name || "",
+            lastName: doc.user.lastName || "",
+            phoneNumber: doc.user.phoneNumber || doc.user.username || ""
+        } : null;
+
+        const shabaVal = doc.shaba || doc.iban || doc.user?.shaba || "";
+        const ibanVal = doc.iban || doc.shaba || doc.user?.shaba || "";
+
+        const formattedData = {
+            _id: doc._id,
+            id: doc.id !== undefined ? doc.id : doc._id,
+            name: doc.name || (userObj ? `${userObj.name} ${userObj.lastName}`.trim() : ""),
+            amount: doc.amount,
+            shaba: shabaVal,
+            iban: ibanVal,
+            status: doc.status,
+            description: doc.description || "",
+            adminDescription: doc.adminDescription || "",
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+            user: userObj
+        };
+
+        return res.status(200).json({
+            data: formattedData
+        });
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
 const FoundWithdrawal = async (req, res, next) => {
     try {
-        if (req.query.id) {
-            const thisObject = await objectModel.findById(req.query.id);
-            if (thisObject) {
-                res.status(200).json(thisObject);
-            }
-            else
-                res.status(404).json({error : erorrs.notFound_404});
+        const idParam = req.query.id || req.params.id;
+        if (!idParam) {
+            return res.status(404).json({ error: erorrs.notFound_404 });
         }
-        else
-        {
-            res.status(404).json({error : erorrs.notFound_404});
+
+        let query = {};
+        if (idParam.match(/^[0-9a-fA-F]{24}$/)) {
+            query = { _id: idParam };
+        } else if (!isNaN(Number(idParam))) {
+            query = { id: Number(idParam) };
+        } else {
+            query = { _id: null };
         }
+
+        const withdrawal = await objectModel.findOne(query).populate("user");
+        if (!withdrawal) {
+            return res.status(404).json({ error: erorrs.notFound_404 });
+        }
+
+        const doc = withdrawal.toObject();
+        const userObj = doc.user ? {
+            _id: doc.user._id,
+            name: doc.user.name || "",
+            lastName: doc.user.lastName || "",
+            phoneNumber: doc.user.phoneNumber || doc.user.username || ""
+        } : null;
+
+        const shabaVal = doc.shaba || doc.iban || doc.user?.shaba || "";
+        const ibanVal = doc.iban || doc.shaba || doc.user?.shaba || "";
+
+        const formattedData = {
+            _id: doc._id,
+            id: doc.id !== undefined ? doc.id : doc._id,
+            name: doc.name || (userObj ? `${userObj.name} ${userObj.lastName}`.trim() : ""),
+            amount: doc.amount,
+            shaba: shabaVal,
+            iban: ibanVal,
+            status: doc.status,
+            description: doc.description || "",
+            adminDescription: doc.adminDescription || "",
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+            user: userObj
+        };
+
+        return res.status(200).json({
+            data: formattedData
+        });
     } catch (err) {
-        res.status(500).json(err);
+        return res.status(500).json(err);
     }
-}
+};
 
 
 
@@ -191,9 +282,10 @@ const GetWithdrawalOfUser = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const perpage = parseInt(req.query.perpage) || 10;
 
-        let sort = { _id: -1 };
-        if (req.query.id) {
-            sort = { _id: parseInt(req.query.id) === 1 ? 1 : -1 };
+        let sort = { id: -1, _id: -1 };
+        if (req.query.id !== undefined) {
+            const idOrder = parseInt(req.query.id) === 1 ? 1 : -1;
+            sort = { id: idOrder, _id: idOrder };
         }
 
         const skip = (page - 1) * perpage;
@@ -226,9 +318,10 @@ const GetWithdrawals = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const perpage = parseInt(req.query.perpage) || 10;
 
-        let sort = { _id: -1 };
-        if (req.query.id) {
-            sort = { _id: parseInt(req.query.id) === 1 ? 1 : -1 };
+        let sort = { id: -1, _id: -1 };
+        if (req.query.id !== undefined) {
+            const idOrder = parseInt(req.query.id) === 1 ? 1 : -1;
+            sort = { id: idOrder, _id: idOrder };
         }
 
         const skip = (page - 1) * perpage;
@@ -253,4 +346,4 @@ const GetWithdrawals = async (req, res, next) => {
      }
 };
 
-module.exports = { RequestWithdrawal  ,UpdateWithdrawal, ApproveWithdrawal , DeleteWithdrawal  , DeleteWithdrawalFromDb,FoundWithdrawal , GetWithdrawals , GetWithdrawalOfUser}
+module.exports = { RequestWithdrawal  ,UpdateWithdrawal, ApproveWithdrawal , DeleteWithdrawal  , DeleteWithdrawalFromDb,FoundWithdrawal , GetWithdrawals , GetWithdrawalOfUser, GetWithdrawalById }
