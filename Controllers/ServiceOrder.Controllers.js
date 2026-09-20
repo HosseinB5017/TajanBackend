@@ -172,7 +172,7 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             user.finance = (user.finance || 0) - finalPrice;
             await user.save();
             paymentStatus = "completed";
-        } else if (selectedPaymentMethod === "card_to_card") {
+        } else if (selectedPaymentMethod === "card_to_card" || selectedPaymentMethod === "cash_on_delivery") {
             paymentStatus = "pending";
         }
 
@@ -251,7 +251,13 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
                 {
                     status: "pending",
                     date: new Date(),
-                    comment: selectedPaymentMethod === "wallet" ? "سفارش با کسر از کیف پول ثبت شد" : (selectedPaymentMethod === "card_to_card" ? "سفارش با روش کارت به کارت ثبت شد" : "سفارش توسط کاربر ثبت شد"),
+                    comment: selectedPaymentMethod === "wallet" 
+                        ? "سفارش با کسر از کیف پول ثبت شد" 
+                        : (selectedPaymentMethod === "card_to_card" 
+                            ? "سفارش با روش کارت به کارت ثبت شد" 
+                            : (selectedPaymentMethod === "cash_on_delivery"
+                                ? "سفارش با روش پرداخت در محل ثبت شد"
+                                : "سفارش توسط کاربر ثبت شد")),
                     actor: req.user.id
                 }
             ]

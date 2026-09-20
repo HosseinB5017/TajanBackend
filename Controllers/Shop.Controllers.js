@@ -139,6 +139,7 @@ const createShop = async (req, res) => {
             paymentSettings: paymentSettings || {
                 walletEnabled: true,
                 cardEnabled: false,
+                cashOnDeliveryEnabled: false,
                 gatewayEnabled: false,
                 cardInfo: { cardNumber: "", cardHolderName: "", bankName: "", iban: "" }
             },

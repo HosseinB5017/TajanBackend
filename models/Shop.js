@@ -88,6 +88,7 @@ const ShopSchema = new mongoose.Schema(
         paymentSettings: {
             walletEnabled: { type: Boolean, default: true },
             cardEnabled: { type: Boolean, default: false },
+            cashOnDeliveryEnabled: { type: Boolean, default: false },
             gatewayEnabled: { type: Boolean, default: false },
             cardInfo: {
                 cardNumber: { type: String, default: "" },
