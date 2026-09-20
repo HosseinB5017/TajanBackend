@@ -84,6 +84,17 @@ const ShopSchema = new mongoose.Schema(
         operatingHours: {
             open: { type: String, default: "08:00" },
             close: { type: String, default: "22:00" }
+        },
+        paymentSettings: {
+            walletEnabled: { type: Boolean, default: true },
+            cardEnabled: { type: Boolean, default: false },
+            gatewayEnabled: { type: Boolean, default: false },
+            cardInfo: {
+                cardNumber: { type: String, default: "" },
+                cardHolderName: { type: String, default: "" },
+                bankName: { type: String, default: "" },
+                iban: { type: String, default: "" }
+            }
         }
     },
     { timestamps: true }

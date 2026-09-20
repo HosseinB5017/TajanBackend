@@ -63,10 +63,19 @@ const ServiceOrderSchema = new mongoose.Schema(
         finalPrice: { type: Number, default: 0 },
         paymentStatus: {
             type: String,
-            enum: ["pending", "paid", "cash_on_delivery", "wallet"],
+            enum: ["pending", "paid", "completed", "refunded", "rejected", "cash_on_delivery", "wallet"],
             default: "pending"
         },
-        paymentMethod: { type: String, default: "cash_on_delivery" },
+        paymentMethod: {
+            type: String,
+            enum: ["wallet", "card_to_card", "gateway", "online", "cash_on_delivery"],
+            default: "cash_on_delivery"
+        },
+        paymentReceipt: {
+            imageUrl: { type: String, default: "" },
+            trackingCode: { type: String, default: "" },
+            uploadedAt: { type: Date, default: null }
+        },
         cancellationReason: { type: String, default: "" },
         rejectionReason: { type: String, default: "" },
         notes: { type: String, default: "" },

@@ -1,27 +1,37 @@
 const erorrs = require("../Erorrs");
 const objectModel = require("../models/Withdrawal");
 const UserInfo = require("../models/User");
+const Transaction = require("../models/Transaction");
 const smsController = require("../Utils/SmSController");
 
 
 const RequestWithdrawal = async (req, res) => {
     try {
         const { amount, method, description , name } = req.body;
+        const numericAmount = Number(amount);
         const withdrawalUser = await UserInfo.findById(req.user.id);
         if (!withdrawalUser)
             return res.status(400).json({ error: erorrs.userFound_404 });
 
-        if (withdrawalUser.finance < amount)
+        if (!numericAmount || numericAmount <= 0) {
+            return res.status(400).json({ error: erorrs.costIsLessThanThreshold || "مبلغ نامعتبر است" });
+        }
+
+        if (withdrawalUser.finance < numericAmount)
             return res.status(400).json({ error: erorrs.notEnoughCash });
 
-        // چک کردن برای درخواست فعال برداشت
-        if (!amount || amount < process.env.withdraThreshold) {
+        // چک کردن برای حداقل مبلغ برداشت
+        if (numericAmount < (Number(process.env.withdraThreshold) || 0)) {
             return res.status(400).json({ error: erorrs.costIsLessThanThreshold });
         }
 
+        // کسر موجودی از کیف پول کاربر هنگام ثبت درخواست برداشت
+        withdrawalUser.finance -= numericAmount;
+        await withdrawalUser.save();
+
         const withdrawal = new objectModel({
-            user: req.user.id,   // فرض می‌کنیم از توکن یوزر اومده
-            amount,
+            user: req.user.id,
+            amount: numericAmount,
             method,
             description,
             name
@@ -29,11 +39,24 @@ const RequestWithdrawal = async (req, res) => {
 
         await withdrawal.save();
 
+        // ثبت تراکنش کسر از کیف پول برای برداشت
+        await new Transaction({
+            user: req.user.id,
+            type: "withdrawal",
+            direction: "out",
+            amount: numericAmount,
+            title: `درخواست برداشت وجه #${withdrawal.id !== undefined ? withdrawal.id : withdrawal._id}`,
+            description: description || "ثبت درخواست برداشت وجه از کیف پول",
+            referenceId: String(withdrawal.id !== undefined ? withdrawal.id : withdrawal._id),
+            orderId: String(withdrawal.id !== undefined ? withdrawal.id : withdrawal._id),
+            status: "successful",
+            balanceAfter: withdrawalUser.finance
+        }).save();
 
         //RegisterWithdrawalForUser
         const amountText = Intl.NumberFormat('fa-IR', {
             maximumFractionDigits: 0
-        }).format(amount || 0) + " هزار";
+        }).format(numericAmount || 0) + " هزار";
     /// تومان داخل پیامک هس در ملی پیامک
         console.log(amountText)
 
@@ -45,7 +68,7 @@ const RequestWithdrawal = async (req, res) => {
 
 
         //RecciveWithdrawl
-        smsController.RecciveWithdrawalForAdmin( amount).then((data) => {
+        smsController.RecciveWithdrawalForAdmin(numericAmount).then((data) => {
             console.log('SMS sent successfully: RecciveWithdrawalForAdmin', data);
         }).catch((error) => {
             console.error('Failed to send SMS: RecciveWithdrawalForAdmin', error.message);
@@ -94,36 +117,62 @@ const ApproveWithdrawal = async (req, res) => {
             return res.status(404).json({ error: erorrs.notFound_404 });
         }
 
-        let withdrawalUser ;
-        if (status == "approved" ) {
-             withdrawalUser = await UserInfo.findById(withdrawal.user);
-            withdrawalUser.finance -= withdrawal.amount;
+        if (withdrawal.status !== "pending") {
+            return res.status(400).json({ error: "این درخواست قبلاً تعیین وضعیت شده است" });
+        }
+
+        const withdrawalUser = await UserInfo.findById(withdrawal.user);
+        if (!withdrawalUser) {
+            return res.status(404).json({ error: erorrs.userFound_404 });
+        }
+
+        // اگر رد شد، مبلغ به کیف پول کاربر عودت داده شود
+        if (status === "rejected") {
+            withdrawalUser.finance = (withdrawalUser.finance || 0) + withdrawal.amount;
             await withdrawalUser.save();
+
+            // ثبت تراکنش بازگشت وجه در تاریخچه تراکنش‌ها
+            await new Transaction({
+                user: withdrawalUser._id,
+                type: "deposit",
+                direction: "in",
+                amount: withdrawal.amount,
+                title: `برگشت وجه برداشت #${withdrawal.id !== undefined ? withdrawal.id : withdrawal._id}`,
+                description: description || "برگشت وجه به دلیل رد درخواست برداشت",
+                referenceId: String(withdrawal.id !== undefined ? withdrawal.id : withdrawal._id),
+                orderId: String(withdrawal.id !== undefined ? withdrawal.id : withdrawal._id),
+                status: "successful",
+                balanceAfter: withdrawalUser.finance
+            }).save();
         }
 
         withdrawal.status = status;
-        withdrawal.adminDescription = description ;
+        withdrawal.adminDescription = description || "";
         withdrawal.processTime = new Date();
 
         await withdrawal.save();
 
-
-        if (status == "approved" )
-        {
+        if (status === "approved") {
             //ApproveForUser
             smsController.WithdrawalConfirmationForUser(withdrawalUser.username , withdrawal.amount).then((data) => {
                 console.log('SMS sent successfully: WithdrawalConfirmationForUser', data);
             }).catch((error) => {
                 console.error('Failed to send SMS: WithdrawalConfirmationForUser', error.message);
             });
-
         }
         res.status(200).json({
             message: `درخواست برداشت ${status === "approved" ? "تایید" : "رد"} شد`,
             data: withdrawal
         });
 
-    } catch (error) {
+   
+
+        res.status(200).json({
+            message: `درخواست برداشت ${status === "approved" ? "تایید" : "رد"} شد`,
+            data: withdrawal
+        });
+
+    }catch (error) {
         res.status(400).json({ error: error.message });
     }
 };

@@ -110,6 +110,7 @@ const createShop = async (req, res) => {
             deliveryCost,
             status,
             operatingHours,
+            paymentSettings,
             products
         } = req.body;
 
@@ -135,6 +136,12 @@ const createShop = async (req, res) => {
             deliveryCost: effectiveDeliveryFee,
             status: status || "active",
             operatingHours: operatingHours || { open: "08:00", close: "22:00" },
+            paymentSettings: paymentSettings || {
+                walletEnabled: true,
+                cardEnabled: false,
+                gatewayEnabled: false,
+                cardInfo: { cardNumber: "", cardHolderName: "", bankName: "", iban: "" }
+            },
             products: products || [],
             active: true
         });
@@ -193,7 +200,8 @@ const updateShop = async (req, res) => {
             "minOrderAmount",
             "deliveryFee",
             "deliveryCost",
-            "operatingHours"
+            "operatingHours",
+            "paymentSettings"
         ];
 
         allowedFields.forEach((field) => {

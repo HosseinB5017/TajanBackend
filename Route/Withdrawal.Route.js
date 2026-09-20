@@ -5,8 +5,8 @@ const controller = require('../Controllers/Withdrawal.Controllers');
 
 
 router.post('/', verifyToken , controller.RequestWithdrawal);
-router.post('/update/:id', verifyToken , controller.UpdateWithdrawal);
-router.post('/Accept/:id', verifyToken , controller.ApproveWithdrawal);
+router.post('/update/:id', verifyTokenAndAdmin , controller.UpdateWithdrawal);
+router.post('/Accept/:id', verifyTokenAndAdmin , controller.ApproveWithdrawal);
 router.delete('/:id',verifyTokenAndAdmin, controller.DeleteWithdrawal);
 router.delete('/db/:id',verifyTokenAndAdmin, controller.DeleteWithdrawalFromDb);
 router.get('/', verifyToken,  controller.GetWithdrawals);

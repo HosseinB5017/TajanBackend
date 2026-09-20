@@ -21,6 +21,7 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             addressDetails,
             selectedSlot,
             paymentMethod,
+            paymentReceipt,
             itemsPrice,
             deliveryCost: bodyDeliveryCost,
             deliveryFee: bodyDeliveryFee,
@@ -170,7 +171,19 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             // Deduct from wallet
             user.finance = (user.finance || 0) - finalPrice;
             await user.save();
-            paymentStatus = "paid";
+            paymentStatus = "completed";
+        } else if (selectedPaymentMethod === "card_to_card") {
+            paymentStatus = "pending";
+        }
+
+        // Format paymentReceipt if provided
+        let formattedPaymentReceipt = undefined;
+        if (paymentReceipt && typeof paymentReceipt === "object") {
+            formattedPaymentReceipt = {
+                imageUrl: paymentReceipt.imageUrl || "",
+                trackingCode: paymentReceipt.trackingCode || "",
+                uploadedAt: paymentReceipt.uploadedAt ? new Date(paymentReceipt.uploadedAt) : new Date()
+            };
         }
 
         // Recalculate shop totalStock & save
@@ -232,12 +245,13 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             finalPrice: finalPrice,
             paymentMethod: selectedPaymentMethod,
             paymentStatus: paymentStatus,
+            paymentReceipt: formattedPaymentReceipt,
             notes: notes || "",
             timeline: [
                 {
                     status: "pending",
                     date: new Date(),
-                    comment: selectedPaymentMethod === "wallet" ? "سفارش با کسر از کیف پول ثبت شد" : "سفارش توسط کاربر ثبت شد",
+                    comment: selectedPaymentMethod === "wallet" ? "سفارش با کسر از کیف پول ثبت شد" : (selectedPaymentMethod === "card_to_card" ? "سفارش با روش کارت به کارت ثبت شد" : "سفارش توسط کاربر ثبت شد"),
                     actor: req.user.id
                 }
             ]
@@ -696,7 +710,7 @@ const rejectOrder = async (req, res) => {
         }
 
         // Refund wallet if paid via wallet
-        if (order.paymentStatus === "paid" && order.paymentMethod === "wallet") {
+        if (["paid", "completed"].includes(order.paymentStatus) && order.paymentMethod === "wallet") {
             const refundAmount = order.finalPrice || order.totalPrice || 0;
             const orderUser = await User.findById(order.user);
             if (orderUser) {
@@ -719,7 +733,7 @@ const rejectOrder = async (req, res) => {
                     balanceAfter: orderUser.finance
                 }).save();
             }
-            order.paymentStatus = "pending";
+            order.paymentStatus = "refunded";
         }
 
         await order.save();
@@ -802,7 +816,7 @@ const cancelOrder = async (req, res) => {
         }
 
         // Refund wallet if paid via wallet
-        if (order.paymentStatus === "paid" && order.paymentMethod === "wallet") {
+        if (["paid", "completed"].includes(order.paymentStatus) && order.paymentMethod === "wallet") {
             const refundAmount = order.finalPrice || order.totalPrice || 0;
             const orderUser = await User.findById(order.user);
             if (orderUser) {
@@ -825,7 +839,7 @@ const cancelOrder = async (req, res) => {
                     balanceAfter: orderUser.finance
                 }).save();
             }
-            order.paymentStatus = "pending";
+            order.paymentStatus = "refunded";
         }
 
         await order.save();
@@ -1035,6 +1049,45 @@ const getAdminDashboardStats = async (req, res) => {
     }
 };
 
+// Update payment status (Shop Owner, Manager, or Admin)
+const updatePaymentStatus = async (req, res) => {
+    try {
+        const { paymentStatus } = req.body;
+        const validStatuses = ["pending", "paid", "completed", "refunded", "rejected"];
+        if (!paymentStatus || !validStatuses.includes(paymentStatus)) {
+            return res.status(400).json({ error: "وضعیت پرداخت نامعتبر است" });
+        }
+
+        const order = await ServiceOrder.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ error: "سفارش پیدا نشد" });
+        }
+
+        const shop = await Shop.findById(order.shop);
+        const isOwner = shop && shop.owner.toString() === req.user.id;
+        const isTeam = shop && shop.teamMembers.some((m) => m.user.toString() === req.user.id && ["manager", "operator"].includes(m.role));
+        const isAdmin = req.user.role === "admin";
+
+        if (!isOwner && !isTeam && !isAdmin) {
+            return res.status(403).json({ error: erorrs.TokenNotAuthorized });
+        }
+
+        order.paymentStatus = paymentStatus;
+        order.timeline.push({
+            status: order.status,
+            date: new Date(),
+            comment: `وضعیت پرداخت به ${paymentStatus} تغییر یافت`,
+            actor: req.user.id
+        });
+
+        await order.save();
+
+        return res.status(200).json(order);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     createShopOrder,
     createWaterOrder,
@@ -1049,6 +1102,7 @@ module.exports = {
     deliveredOrder,
     rejectOrder,
     cancelOrder,
+    updatePaymentStatus,
     getShopDashboardStats,
     getAdminDashboardStats
 };

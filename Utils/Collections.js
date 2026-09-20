@@ -51,7 +51,8 @@ const FileSection = {
     USERPROFILE : "userProfile",
     Waste : "waste",
     banner : "banner",
-    product : "product"
+    product : "product",
+    receipt : "receipt"
 }
 
 

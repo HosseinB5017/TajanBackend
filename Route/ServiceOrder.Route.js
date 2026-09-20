@@ -34,5 +34,6 @@ router.get("/admin/stats", verifyTokenAndAdmin, controller.getAdminDashboardStat
 // Single Order
 router.get("/:id", verifyToken, controller.getServiceOrderById);
 router.get("/:serviceType/:id", verifyToken, controller.getServiceOrderById);
+router.put("/:id/payment-status", verifyToken, controller.updatePaymentStatus);
 
 module.exports = router;
