@@ -18,6 +18,7 @@ const Shops = require("../Route/Shop.Route");
 const ServiceOrders = require("../Route/ServiceOrder.Route");
 const Notifications = require("../Route/Notification.Route");
 const Transactions = require("../Route/Transaction.Route");
+const Cooperation = require("../Route/Cooperation.Route");
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
@@ -37,6 +38,7 @@ app.use("/shops", Shops);
 app.use("/service-orders", ServiceOrders);
 app.use("/notifications", Notifications);
 app.use("/transactions", Transactions);
+app.use("/cooperation", Cooperation);
 
 module.exports = app;
 
