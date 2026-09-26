@@ -5,6 +5,7 @@ const Address = require("../models/UserAdress");
 const InventoryLog = require("../models/InventoryLog");
 const ShopNotification = require("../models/ShopNotification");
 const Transaction = require("../models/Transaction");
+const smsController = require("../Utils/SmSController");
 const erorrs = require("../Erorrs.js");
 
 // Helper function to create Service / Shop Order
@@ -319,6 +320,21 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             message: `سفارش جدیدی برای ${serviceName} ثبت شده است.`,
             type: "order_created"
         }).save();
+
+        // Send SMS to courier (Payk)
+        try {
+            const shopTitle = shop.name || "";
+            const productsCountText = verifiedItems.map(item => `${item.quantity} ${item.productName || item.variantName || ""}`.trim()).filter(Boolean).join(" ");
+            const smsText = `${shopTitle} ${productsCountText}`.trim();
+
+            smsController.RecciveOrderForShop(smsText).then((data) => {
+                console.log('SMS sent successfully: RecciveOrderForShop', data);
+            }).catch((error) => {
+                console.error('Failed to send SMS: RecciveOrderForShop', error.message);
+            });
+        } catch (smsErr) {
+            console.error('Error preparing SMS for shop order:', smsErr);
+        }
 
         const populatedOrder = await ServiceOrder.findById(savedOrder._id)
             .populate("shop")

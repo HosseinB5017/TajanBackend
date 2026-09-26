@@ -12,8 +12,12 @@ const  ChargeWalletForUserBodyId = '422830';
 const  RegisterWithrawForUserBodyId = '422836';
 const  ConfirmWithrawForUserBodyId = '422839';
 const  RecciveWithrawForAdminBodyId = '422842';
+const  RecciveOrderForShopBodyId = '543817';
+
 const  driverNumber ='09105696394';
 const  adminNumber = '09032176063';
+const  paykNumber = '09928896946';
+
  async function sendSMSToAdmin(msg ) {
         try {
 
@@ -66,6 +70,22 @@ function RecciveOrderForAdmin(  text = '') {
             });
     });
 }
+
+function RecciveOrderForShop(  text = '') {
+    return new Promise((resolve, reject) => {
+        const api = new MelipayamakApi(username, password);
+        const sms = api.sms();
+
+        sms.sendByBaseNumber(text, paykNumber, RecciveOrderForShopBodyId)
+            .then(response => {
+                resolve(response);
+            })
+            .catch(error => {
+                reject(error);
+            });
+    });
+}
+
 
 function RecciveOrderForDriver(  text = '') {
     return new Promise((resolve, reject) => {
@@ -145,4 +165,4 @@ function RecciveWithdrawalForAdmin(  text = '') {
             });
     });
 }
-module.exports = {sendSMSToAdmin ,sendCreateOrderForUser, RecciveOrderForAdmin, RecciveOrderForDriver, ChargeWalletForUser,WithdrawalForUser ,WithdrawalConfirmationForUser ,  RecciveWithdrawalForAdmin , sendOtp}
+module.exports = {sendSMSToAdmin ,sendCreateOrderForUser, RecciveOrderForAdmin, RecciveOrderForDriver, RecciveOrderForShop, ChargeWalletForUser,WithdrawalForUser ,WithdrawalConfirmationForUser ,  RecciveWithdrawalForAdmin , sendOtp}
