@@ -245,7 +245,24 @@ const getShopProducts = async (req, res) => {
             return res.status(404).json({ error: "فروشگاه پیدا نشد" });
         }
 
-        return res.status(200).json(shop.products || []);
+        let products = shop.products || [];
+
+        // Support optional backend search/filtering via `search` or `q` query parameters
+        const searchQuery = (req.query.search || req.query.q || "").toString().trim().toLowerCase();
+        if (searchQuery) {
+            products = products.filter(product => {
+                const nameMatch = product.name && product.name.toLowerCase().includes(searchQuery);
+                const descMatch = product.description && product.description.toLowerCase().includes(searchQuery);
+                const catMatch = product.category && product.category.toLowerCase().includes(searchQuery);
+                const variantMatch = Array.isArray(product.variants) && product.variants.some(v => 
+                    (v.name && v.name.toLowerCase().includes(searchQuery)) ||
+                    (v.description && v.description.toLowerCase().includes(searchQuery))
+                );
+                return Boolean(nameMatch || descMatch || catMatch || variantMatch);
+            });
+        }
+
+        return res.status(200).json(products);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
