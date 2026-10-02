@@ -72,9 +72,11 @@ const ServiceOrderSchema = new mongoose.Schema(
             default: "cash_on_delivery"
         },
         paymentReceipt: {
-            imageUrl: { type: String, default: "" },
+            cardHolderName: { type: String, default: "" },
+            cardHolder: { type: String, default: "" },
             trackingCode: { type: String, default: "" },
-            uploadedAt: { type: Date, default: null }
+            imageUrl: { type: String, default: "" },
+            uploadedAt: { type: Date, default: Date.now }
         },
         cancellationReason: { type: String, default: "" },
         rejectionReason: { type: String, default: "" },

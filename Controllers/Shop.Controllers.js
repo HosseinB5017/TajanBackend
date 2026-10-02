@@ -240,12 +240,28 @@ const deleteShop = async (req, res) => {
 // Get products of a shop
 const getShopProducts = async (req, res) => {
     try {
-        const shop = await Shop.findById(req.params.id);
+        const shop = await Shop.findById(req.params.id || req.params.shopId);
         if (!shop) {
             return res.status(404).json({ error: "فروشگاه پیدا نشد" });
         }
 
         let products = shop.products || [];
+
+        // Filter by active status if requested
+        if (req.query.active !== undefined) {
+            const isActive = req.query.active === "true" || req.query.active === true;
+            products = products.filter(p => (p.active !== undefined ? p.active : true) === isActive);
+        }
+
+        // Filter by category or categoryId
+        const categoryFilter = (req.query.category || req.query.categoryId || "").toString().trim().toLowerCase();
+        if (categoryFilter) {
+            products = products.filter(p => {
+                const catNameMatch = p.category && p.category.toLowerCase() === categoryFilter;
+                const catIdMatch = p.categoryId && p.categoryId.toString().toLowerCase() === categoryFilter;
+                return Boolean(catNameMatch || catIdMatch);
+            });
+        }
 
         // Support optional backend search/filtering via `search` or `q` query parameters
         const searchQuery = (req.query.search || req.query.q || "").toString().trim().toLowerCase();
@@ -282,7 +298,7 @@ const addProductToShop = async (req, res) => {
             return res.status(403).json({ error: erorrs.TokenNotAuthorized });
         }
 
-        const { name, description, image, img, images, price, basePrice, stock, category, variants } = req.body;
+        const { name, description, image, img, images, price, basePrice, stock, category, categoryId, variants, active } = req.body;
         if (!name) {
             return res.status(400).json({ error: "نام محصول الزامی است" });
         }
@@ -304,9 +320,10 @@ const addProductToShop = async (req, res) => {
             basePrice: effectivePrice,
             stock: stock || 0,
             category: category || "",
+            categoryId: categoryId || undefined,
             variants: formattedVariants,
             available: true,
-            active: true
+            active: active !== undefined ? Boolean(active) : true
         };
 
         shop.products.push(newProduct);
@@ -353,7 +370,7 @@ const updateProduct = async (req, res) => {
             return res.status(404).json({ error: "محصول پیدا نشد" });
         }
 
-        const fields = ["name", "description", "image", "price", "basePrice", "stock", "category", "available", "active", "images"];
+        const fields = ["name", "description", "image", "price", "basePrice", "stock", "category", "categoryId", "available", "active", "images"];
         fields.forEach((field) => {
             if (req.body[field] !== undefined) {
                 product[field] = req.body[field];

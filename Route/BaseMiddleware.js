@@ -19,6 +19,7 @@ const ServiceOrders = require("../Route/ServiceOrder.Route");
 const Notifications = require("../Route/Notification.Route");
 const Transactions = require("../Route/Transaction.Route");
 const Cooperation = require("../Route/Cooperation.Route");
+const ProductCategory = require("../Route/ProductCategory.Route");
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
@@ -39,6 +40,8 @@ app.use("/service-orders", ServiceOrders);
 app.use("/notifications", Notifications);
 app.use("/transactions", Transactions);
 app.use("/cooperation", Cooperation);
+app.use("/ProductCategory", ProductCategory);
+app.use("/product-categories", ProductCategory);
 
 module.exports = app;
 

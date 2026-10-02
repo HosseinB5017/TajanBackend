@@ -180,9 +180,12 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
         // Format paymentReceipt if provided
         let formattedPaymentReceipt = undefined;
         if (paymentReceipt && typeof paymentReceipt === "object") {
+            const cardHolder = paymentReceipt.cardHolderName || paymentReceipt.cardHolder || "";
             formattedPaymentReceipt = {
-                imageUrl: paymentReceipt.imageUrl || "",
+                cardHolderName: cardHolder,
+                cardHolder: cardHolder,
                 trackingCode: paymentReceipt.trackingCode || "",
+                imageUrl: paymentReceipt.imageUrl || "",
                 uploadedAt: paymentReceipt.uploadedAt ? new Date(paymentReceipt.uploadedAt) : new Date()
             };
         }

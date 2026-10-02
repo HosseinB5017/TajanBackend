@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { verifyToken, verifyTokenAndAdmin } = require("../Controllers/VerifyToken");
 const controller = require("../Controllers/Shop.Controllers");
+const productCategoryController = require("../Controllers/ProductCategory.Controllers");
 
 // Public / Authenticated Shop Browsing
 router.get("/", controller.getShops);
@@ -9,6 +10,12 @@ router.get("/me", verifyToken, controller.getMyShops);
 router.get("/:id", controller.getShopById);
 router.get("/:id/products", controller.getShopProducts);
 router.get("/:shopId/stats", verifyToken, require("../Controllers/ServiceOrder.Controllers").getShopDashboardStats);
+
+// Shop Product Categories
+router.get("/:shopId/categories", productCategoryController.getProductCategories);
+router.post("/:shopId/categories", verifyToken, productCategoryController.createProductCategory);
+router.put("/:shopId/categories/:categoryId", verifyToken, productCategoryController.updateProductCategory);
+router.delete("/:shopId/categories/:categoryId", verifyToken, productCategoryController.deleteProductCategory);
 
 // Shop Management (Admin or Owner)
 router.post("/", verifyToken, controller.createShop);

@@ -24,6 +24,7 @@ const ProductSchema = new mongoose.Schema(
         stock: { type: Number, required: true, default: 0 },
         available: { type: Boolean, default: true },
         category: { type: String, default: "" },
+        categoryId: { type: schema.Types.ObjectId, ref: "ProductCategory", required: false },
         variants: [ProductVariantSchema],
         active: { type: Boolean, default: true }
     },
