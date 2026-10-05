@@ -26,6 +26,7 @@ const getProductCategories = async (req, res) => {
 
         const categories = await ProductCategory.find(filter).sort({ order: 1, createdAt: 1 });
         return res.status(200).json({
+            status: "success",
             success: true,
             data: categories
         });
@@ -42,6 +43,7 @@ const getProductCategoryById = async (req, res) => {
             return res.status(404).json({ success: false, error: "دسته‌بندی مورد نظر پیدا نشد" });
         }
         return res.status(200).json({
+            status: "success",
             success: true,
             data: category
         });
@@ -54,9 +56,9 @@ const getProductCategoryById = async (req, res) => {
 const createProductCategory = async (req, res) => {
     try {
         const shopId = req.params.shopId || req.body.shop || req.body.shopId;
-        const { title, icon, order, active } = req.body;
+        const { title, name, description, icon, image, order, active } = req.body;
 
-        if (!title) {
+        if (!title && !name) {
             return res.status(400).json({ success: false, error: "عنوان دسته‌بندی الزامی است" });
         }
 
@@ -73,10 +75,16 @@ const createProductCategory = async (req, res) => {
             }
         }
 
+        const categoryTitle = title || name;
+        const categoryName = name || title;
+
         const newCategory = new ProductCategory({
-            title,
+            title: categoryTitle,
+            name: categoryName,
+            description: description || "",
             shop: shopId || undefined,
             icon: icon || "",
+            image: image || "",
             order: order !== undefined ? Number(order) : 0,
             active: active !== undefined ? Boolean(active) : true
         });
@@ -84,6 +92,7 @@ const createProductCategory = async (req, res) => {
         const savedCategory = await newCategory.save();
         return res.status(201).json({
             success: true,
+            status: "success",
             data: savedCategory
         });
     } catch (error) {
@@ -112,16 +121,24 @@ const updateProductCategory = async (req, res) => {
             }
         }
 
-        const allowedFields = ["title", "icon", "order", "active", "shop"];
+        const allowedFields = ["title", "name", "description", "icon", "image", "order", "active", "shop"];
         allowedFields.forEach((field) => {
             if (req.body[field] !== undefined) {
                 category[field] = req.body[field];
             }
         });
 
+        // Sync title and name if only one is updated
+        if (req.body.title && req.body.name === undefined && !category.name) {
+            category.name = req.body.title;
+        } else if (req.body.name && req.body.title === undefined && !category.title) {
+            category.title = req.body.name;
+        }
+
         const updatedCategory = await category.save();
         return res.status(200).json({
             success: true,
+            status: "success",
             data: updatedCategory
         });
     } catch (error) {
@@ -152,6 +169,7 @@ const deleteProductCategory = async (req, res) => {
 
         await ProductCategory.findByIdAndDelete(categoryId);
         return res.status(200).json({
+            status: "success",
             success: true,
             message: "دسته‌بندی با موفقیت حذف شد"
         });
