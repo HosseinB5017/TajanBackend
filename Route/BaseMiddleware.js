@@ -20,6 +20,7 @@ const Notifications = require("../Route/Notification.Route");
 const Transactions = require("../Route/Transaction.Route");
 const Cooperation = require("../Route/Cooperation.Route");
 const ProductCategory = require("../Route/ProductCategory.Route");
+const DiscountCodes = require("../Route/DiscountCode.Route");
 
 app.use("/users", userRoutes);
 app.use("/Banners", Banners);
@@ -42,6 +43,8 @@ app.use("/transactions", Transactions);
 app.use("/cooperation", Cooperation);
 app.use("/ProductCategory", ProductCategory);
 app.use("/product-categories", ProductCategory);
+app.use("/discount-codes", DiscountCodes);
+app.use("/shops", DiscountCodes);
 
 module.exports = app;
 

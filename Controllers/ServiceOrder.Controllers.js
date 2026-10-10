@@ -5,8 +5,113 @@ const Address = require("../models/UserAdress");
 const InventoryLog = require("../models/InventoryLog");
 const ShopNotification = require("../models/ShopNotification");
 const Transaction = require("../models/Transaction");
+const DiscountCode = require("../models/DiscountCode");
+const DiscountRedemption = require("../models/DiscountRedemption");
 const smsController = require("../Utils/SmSController");
 const erorrs = require("../Erorrs.js");
+
+const normalizeDiscountCode = (value) => String(value || "").trim().replace(/\s+/g, "").toUpperCase();
+
+const evaluateDiscountAmount = (discountKind, discountValue, subtotal) => {
+    const safeSubtotal = Math.max(0, Number(subtotal) || 0);
+    if (discountKind === "percentage") {
+        return Math.min(Math.floor((safeSubtotal * Number(discountValue || 0)) / 100), safeSubtotal);
+    }
+    return Math.min(Number(discountValue || 0), safeSubtotal);
+};
+
+const resolveDiscountForOrder = async ({ shop, userId, codeValue, subtotal }) => {
+    if (!codeValue) {
+        return { active: false, discountAmount: 0, codeDoc: null, snapshot: null, redemption: null };
+    }
+
+    const normalized = normalizeDiscountCode(codeValue);
+    if (!normalized) {
+        return { active: false, discountAmount: 0, codeDoc: null, snapshot: null, redemption: null };
+    }
+
+    const codeDoc = await DiscountCode.findOne({ normalizedCode: normalized }).lean();
+    if (!codeDoc) {
+        const err = new Error("کد تخفیف یافت نشد");
+        err.statusCode = 404;
+        err.errorCode = "DISCOUNT_CODE_NOT_FOUND";
+        throw err;
+    }
+
+    const now = new Date();
+    if (!codeDoc.isActive) {
+        const err = new Error("کد تخفیف غیرفعال است");
+        err.statusCode = 409;
+        err.errorCode = "DISCOUNT_CODE_INACTIVE";
+        throw err;
+    }
+    if (now > new Date(codeDoc.expiresAt)) {
+        const err = new Error("کد تخفیف منقضی شده است");
+        err.statusCode = 409;
+        err.errorCode = "DISCOUNT_CODE_EXPIRED";
+        throw err;
+    }
+    if (codeDoc.scope === "shop" && String(codeDoc.shopId) !== String(shop._id)) {
+        const err = new Error("کد تخفیف برای این فروشگاه معتبر نیست");
+        err.statusCode = 409;
+        err.errorCode = "SHOP_SCOPE_MISMATCH";
+        throw err;
+    }
+    if (!codeDoc.shopTypes || !codeDoc.shopTypes.includes(shop.shopType)) {
+        const err = new Error("نوع فروشگاه برای این کد مجاز نیست");
+        err.statusCode = 409;
+        err.errorCode = "SHOP_TYPE_NOT_ALLOWED";
+        throw err;
+    }
+
+    const activeUsageCount = await DiscountRedemption.countDocuments({
+        discountCodeId: codeDoc._id,
+        userId,
+        status: { $in: ["reserved", "committed"] }
+    });
+    if (activeUsageCount >= Number(codeDoc.maxUsesPerUser || 1)) {
+        const err = new Error("سقف مصرف کد برای شما تکمیل شده است");
+        err.statusCode = 409;
+        err.errorCode = "USER_USE_LIMIT_REACHED";
+        throw err;
+    }
+
+    const distinctUsers = await DiscountRedemption.distinct("userId", {
+        discountCodeId: codeDoc._id,
+        status: { $in: ["reserved", "committed"] }
+    });
+    if (distinctUsers.length >= Number(codeDoc.maxDistinctUsers || 1)) {
+        const err = new Error("سقف تعداد کاربران کد تکمیل شده است");
+        err.statusCode = 409;
+        err.errorCode = "MAX_USERS_REACHED";
+        throw err;
+    }
+
+    const discountAmount = evaluateDiscountAmount(codeDoc.discountKind, codeDoc.discountValue, subtotal);
+    const snapshot = {
+        discountCodeId: String(codeDoc._id),
+        code: codeDoc.code,
+        scope: codeDoc.scope,
+        discountKind: codeDoc.discountKind,
+        discountValue: codeDoc.discountValue,
+        itemsSubtotalBeforeDiscount: subtotal,
+        discountAmount,
+        itemsSubtotalAfterDiscount: Math.max(0, subtotal - discountAmount),
+        deliveryCost: Number(shop.deliveryCost || shop.deliveryFee || 0),
+        totalPayable: Math.max(0, subtotal - discountAmount + Number(shop.deliveryCost || shop.deliveryFee || 0))
+    };
+
+    const redemption = await DiscountRedemption.create({
+        discountCodeId: codeDoc._id,
+        userId,
+        orderId: null,
+        status: "reserved",
+        discountAmount,
+        reservedAt: new Date()
+    });
+
+    return { active: true, discountAmount, codeDoc, snapshot, redemption };
+};
 
 // Helper function to create Service / Shop Order
 const createServiceOrder = async (req, res, forcedServiceType) => {
@@ -149,7 +254,20 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
         }
 
         const effectiveDeliveryCost = bodyDeliveryCost !== undefined ? bodyDeliveryCost : (bodyDeliveryFee !== undefined ? bodyDeliveryFee : (shop.deliveryCost || shop.deliveryFee || 0));
-        const finalPrice = calculatedTotalPrice + effectiveDeliveryCost;
+        const finalPriceBase = calculatedTotalPrice + effectiveDeliveryCost;
+
+        let discountInfo = { active: false, discountAmount: 0, codeDoc: null, snapshot: null, redemption: null };
+        const inputDiscountCode = req.body.discountCode || req.body.discount_code || req.body.code || "";
+        if (inputDiscountCode) {
+            discountInfo = await resolveDiscountForOrder({
+                shop,
+                userId: req.user.id,
+                codeValue: inputDiscountCode,
+                subtotal: calculatedTotalPrice
+            });
+        }
+
+        const finalPrice = Math.max(0, finalPriceBase - discountInfo.discountAmount);
 
         // Payment method validation & wallet deduction
         const selectedPaymentMethod = paymentMethod || "cash_on_delivery";
@@ -245,7 +363,10 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             totalPrice: calculatedTotalPrice,
             deliveryFee: effectiveDeliveryCost,
             deliveryCost: effectiveDeliveryCost,
-            discount: 0,
+            discount: discountInfo.discountAmount,
+            discountCode: discountInfo.active ? discountInfo.codeDoc.code : "",
+            discountCodeId: discountInfo.active ? discountInfo.codeDoc._id : null,
+            discountSnapshot: discountInfo.active ? discountInfo.snapshot : null,
             finalPrice: finalPrice,
             paymentMethod: selectedPaymentMethod,
             paymentStatus: paymentStatus,
@@ -267,7 +388,35 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
             ]
         });
 
-        const savedOrder = await newOrder.save();
+        let savedOrder;
+        try {
+            savedOrder = await newOrder.save();
+
+            if (discountInfo.redemption) {
+                await DiscountRedemption.updateOne(
+                    { _id: discountInfo.redemption._id },
+                    { orderId: savedOrder._id, status: "committed", committedAt: new Date() }
+                );
+            }
+
+            if (discountInfo.codeDoc) {
+                await DiscountCode.updateOne(
+                    { _id: discountInfo.codeDoc._id },
+                    {
+                        $inc: { totalUsesCount: 1 },
+                        $set: { updatedAt: new Date() }
+                    }
+                );
+            }
+        } catch (error) {
+            if (discountInfo.redemption) {
+                await DiscountRedemption.updateOne(
+                    { _id: discountInfo.redemption._id },
+                    { status: "released", releasedAt: new Date() }
+                );
+            }
+            throw error;
+        }
 
         // If paid via wallet, create a transaction record
         if (selectedPaymentMethod === "wallet") {
@@ -345,6 +494,14 @@ const createServiceOrder = async (req, res, forcedServiceType) => {
 
         return res.status(201).json(populatedOrder);
     } catch (error) {
+        if (error && error.statusCode) {
+            return res.status(error.statusCode).json({
+                error: {
+                    code: error.errorCode || "UNKNOWN_ERROR",
+                    message: error.message
+                }
+            });
+        }
         return res.status(500).json({ error: error.message });
     }
 };

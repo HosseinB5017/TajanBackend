@@ -60,6 +60,9 @@ const ServiceOrderSchema = new mongoose.Schema(
         deliveryFee: { type: Number, default: 0 },
         deliveryCost: { type: Number, default: 0 },
         discount: { type: Number, default: 0 },
+        discountCode: { type: String, default: "" },
+        discountCodeId: { type: schema.Types.ObjectId, ref: "DiscountCode", default: null },
+        discountSnapshot: { type: Object, default: null },
         finalPrice: { type: Number, default: 0 },
         paymentStatus: {
             type: String,
