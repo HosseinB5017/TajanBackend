@@ -3,6 +3,59 @@ const User = require("../models/User");
 const InventoryLog = require("../models/InventoryLog");
 const erorrs = require("../Erorrs.js");
 
+const normalizeProductVariants = (variants) => {
+    if (!Array.isArray(variants)) {
+        const error = new Error("تنوع‌های محصول باید به صورت آرایه ارسال شوند");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return variants.map((variant) => {
+        const basePrice = Number(variant.basePrice !== undefined ? variant.basePrice : (variant.price || 0));
+        if (!Number.isFinite(basePrice) || basePrice < 0) {
+            const error = new Error("قیمت اصلی هر تنوع باید عددی معتبر و نامنفی باشد");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const hasDiscountedPrice = Object.prototype.hasOwnProperty.call(variant, "discountedPrice");
+        const hasDiscountPercentage = Object.prototype.hasOwnProperty.call(variant, "discountPercentage") && variant.discountPercentage !== null;
+        let discountedPrice = null;
+        let discountPercentage = null;
+
+        if (hasDiscountedPrice && variant.discountedPrice !== null) {
+            discountedPrice = Number(variant.discountedPrice);
+            if (!Number.isFinite(discountedPrice) || discountedPrice < 0 || discountedPrice >= basePrice || basePrice === 0) {
+                const error = new Error("قیمت نهایی تخفیف‌خورده باید عددی نامنفی و کمتر از قیمت اصلی باشد");
+                error.statusCode = 400;
+                throw error;
+            }
+
+            discountPercentage = Math.round(((basePrice - discountedPrice) / basePrice) * 10000) / 100;
+            if (hasDiscountPercentage) {
+                const suppliedPercentage = Number(variant.discountPercentage);
+                if (!Number.isFinite(suppliedPercentage) || Math.abs(suppliedPercentage - discountPercentage) > 0.01) {
+                    const error = new Error("درصد تخفیف با اختلاف قیمت اصلی و قیمت نهایی مطابقت ندارد");
+                    error.statusCode = 400;
+                    throw error;
+                }
+            }
+        } else if (hasDiscountPercentage) {
+            const error = new Error("برای تعیین درصد تخفیف، discountedPrice معتبر نیز الزامی است");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        return {
+            ...variant,
+            price: discountedPrice === null ? basePrice : discountedPrice,
+            basePrice,
+            discountedPrice,
+            discountPercentage
+        };
+    });
+};
+
 // Get all shops with filters (search, type, category, city, active)
 const getShops = async (req, res) => {
     try {
@@ -305,11 +358,12 @@ const addProductToShop = async (req, res) => {
 
         const effectivePrice = basePrice !== undefined ? basePrice : (price || 0);
         const effectiveImage = image || img || "";
-        const formattedVariants = (variants || []).map(v => ({
-            ...v,
-            price: v.basePrice !== undefined ? v.basePrice : (v.price || 0),
-            basePrice: v.basePrice !== undefined ? v.basePrice : (v.price || 0)
-        }));
+        let formattedVariants;
+        try {
+            formattedVariants = normalizeProductVariants(variants || []);
+        } catch (error) {
+            return res.status(error.statusCode || 400).json({ error: error.message });
+        }
 
         const newProduct = {
             name,
@@ -346,7 +400,7 @@ const addProductToShop = async (req, res) => {
 
         return res.status(201).json(createdProduct);
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return res.status(error.statusCode || 500).json({ error: error.message });
     }
 };
 
@@ -387,12 +441,12 @@ const updateProduct = async (req, res) => {
             product.basePrice = req.body.price;
         }
 
-        if (req.body.variants) {
-            product.variants = req.body.variants.map(v => ({
-                ...v,
-                price: v.basePrice !== undefined ? v.basePrice : (v.price || 0),
-                basePrice: v.basePrice !== undefined ? v.basePrice : (v.price || 0)
-            }));
+        if (req.body.variants !== undefined) {
+            try {
+                product.variants = normalizeProductVariants(req.body.variants);
+            } catch (error) {
+                return res.status(error.statusCode || 400).json({ error: error.message });
+            }
         }
 
         // Recalculate totalStock
