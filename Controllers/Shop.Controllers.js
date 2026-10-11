@@ -34,14 +34,6 @@ const normalizeProductVariants = (variants) => {
             }
 
             discountPercentage = Math.round(((basePrice - discountedPrice) / basePrice) * 10000) / 100;
-            if (hasDiscountPercentage) {
-                const suppliedPercentage = Number(variant.discountPercentage);
-                if (!Number.isFinite(suppliedPercentage) || Math.abs(suppliedPercentage - discountPercentage) > 0.01) {
-                    const error = new Error("درصد تخفیف با اختلاف قیمت اصلی و قیمت نهایی مطابقت ندارد");
-                    error.statusCode = 400;
-                    throw error;
-                }
-            }
         } else if (hasDiscountPercentage) {
             const error = new Error("برای تعیین درصد تخفیف، discountedPrice معتبر نیز الزامی است");
             error.statusCode = 400;
