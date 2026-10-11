@@ -23,8 +23,10 @@ const normalizeProductVariants = (variants) => {
         let discountedPrice = null;
         let discountPercentage = null;
 
-        if (hasDiscountedPrice && variant.discountedPrice !== null) {
-            discountedPrice = Number(variant.discountedPrice);
+        const hasExplicitDiscountedPrice = hasDiscountedPrice && variant.discountedPrice !== null;
+        const hasLegacyDiscountPrice = !hasDiscountedPrice && variant.price !== undefined && Number(variant.price) < basePrice;
+        if (hasExplicitDiscountedPrice || hasLegacyDiscountPrice) {
+            discountedPrice = Number(hasExplicitDiscountedPrice ? variant.discountedPrice : variant.price);
             if (!Number.isFinite(discountedPrice) || discountedPrice < 0 || discountedPrice >= basePrice || basePrice === 0) {
                 const error = new Error("قیمت نهایی تخفیف‌خورده باید عددی نامنفی و کمتر از قیمت اصلی باشد");
                 error.statusCode = 400;
